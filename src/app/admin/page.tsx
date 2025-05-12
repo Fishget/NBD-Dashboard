@@ -2,7 +2,9 @@ import { cookies } from 'next/headers';
 import { isAuthenticated } from '@/lib/auth';
 import { LoginForm } from '@/components/login-form';
 import { AdminForm } from '@/components/admin-form';
+import { SheetConfigDisplay } from '@/components/sheet-config-display';
 import { LogoutButton } from '@/components/logout-button';
+import { Separator } from '@/components/ui/separator';
 
 export default function AdminPage() {
   const cookieStore = cookies();
@@ -18,6 +20,11 @@ export default function AdminPage() {
           </div>
           <p className="text-muted-foreground">Add new entries to the Google Sheet.</p>
           <AdminForm />
+
+          <Separator className="my-8" />
+
+          <SheetConfigDisplay />
+
         </>
       ) : (
         <LoginForm />
