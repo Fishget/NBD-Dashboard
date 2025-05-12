@@ -3,9 +3,9 @@
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { checkCredentials, setAuthCookie, clearAuthCookie } from './auth';
-import { loginSchema, sheetRowSchema } from './validators';
+import { loginSchema, sheetRowSchema, sheetConfigSchema } from './validators'; // Added sheetConfigSchema
 import { appendSheetRow } from './sheets';
-import type { SheetRowFormData } from './validators';
+import type { SheetRowFormData, SheetConfigFormData } from './validators'; // Added SheetConfigFormData
 
 export type FormState = {
   message: string;
@@ -79,6 +79,11 @@ export async function submitDataAction(
 
     const dataToAppend: SheetRowFormData = parsed.data;
 
+    // Check if sheets connection is configured before attempting append
+    if (!process.env.GOOGLE_SHEET_ID || !process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || !process.env.GOOGLE_PRIVATE_KEY) {
+        return { message: 'Google Sheet connection is not configured on the server.', success: false };
+    }
+
     const success = await appendSheetRow(dataToAppend);
 
     if (success) {
@@ -91,5 +96,59 @@ export async function submitDataAction(
   } catch (error) {
     console.error('Submit data error:', error);
     return { message: 'An unexpected error occurred while submitting data.', success: false };
+  }
+}
+
+
+export async function saveSheetConfigAction(
+  prevState: FormState | null,
+  formData: FormData
+): Promise<FormState> {
+  try {
+    const parsed = sheetConfigSchema.safeParse({
+      sheetId: formData.get('sheetId'),
+      sheetRange: formData.get('sheetRange'),
+      serviceAccountEmail: formData.get('serviceAccountEmail'),
+      privateKey: formData.get('privateKey'),
+    });
+
+    if (!parsed.success) {
+       console.log("Config Validation errors:", parsed.error.flatten().fieldErrors);
+      return {
+        message: 'Invalid configuration data. Please check the fields.',
+        success: false,
+        errors: parsed.error.flatten().fieldErrors,
+      };
+    }
+
+    const configData: SheetConfigFormData = parsed.data;
+
+    // --- IMPORTANT LIMITATION ---
+    // We cannot dynamically update process.env variables for the running Node.js process.
+    // Environment variables are typically loaded at application startup.
+    // Modifying .env files programmatically is risky and requires app restarts.
+    // Therefore, this action primarily serves to VALIDATE the input format.
+    // The actual connection used by getSheetData/appendSheetRow will still rely on the
+    // environment variables set when the server process started.
+
+    console.log('Received valid sheet configuration data (validation only):', {
+        sheetId: configData.sheetId,
+        sheetRange: configData.sheetRange,
+        serviceAccountEmail: configData.serviceAccountEmail,
+        privateKey: '[REDACTED]', // Avoid logging the private key
+    });
+
+    // Simulate saving - In a real scenario, this might write to a config file or DB,
+    // but that requires more infrastructure and careful handling.
+    // For now, just return success after validation.
+
+    return {
+        message: 'Configuration validated successfully. Remember to update environment variables and restart the server for changes to take effect.',
+        success: true
+    };
+
+  } catch (error) {
+    console.error('Save sheet config error:', error);
+    return { message: 'An unexpected error occurred while validating the configuration.', success: false };
   }
 }

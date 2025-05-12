@@ -2,7 +2,7 @@ import { cookies } from 'next/headers';
 import { isAuthenticated } from '@/lib/auth';
 import { LoginForm } from '@/components/login-form';
 import { AdminForm } from '@/components/admin-form';
-import { SheetConfigDisplay } from '@/components/sheet-config-display';
+import { SheetConfigForm } from '@/components/sheet-config-form'; // Updated import
 import { LogoutButton } from '@/components/logout-button';
 import { Separator } from '@/components/ui/separator';
 
@@ -23,7 +23,8 @@ export default function AdminPage() {
 
           <Separator className="my-8" />
 
-          <SheetConfigDisplay />
+          {/* Use the new editable form */}
+          <SheetConfigForm />
 
         </>
       ) : (
