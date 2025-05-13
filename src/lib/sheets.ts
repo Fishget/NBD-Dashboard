@@ -28,12 +28,19 @@ if (rawPrivateKeyFromEnv && rawPrivateKeyFromEnv.trim() !== '') {
         PRIVATE_KEY = key;
     } else {
         console.warn(
-            'GOOGLE_PRIVATE_KEY environment variable appears malformed (e.g., missing PEM headers/footers or improperly escaped). It will not be used. Sheet operations may fail.'
+            'GOOGLE_PRIVATE_KEY environment variable appears malformed after processing. It will not be used. Sheet operations may fail.' +
+            `\n  Problem: Did not pass startsWith/endsWith "-----BEGIN/END PRIVATE KEY-----" check.` +
+            `\n  Processed key starts with: "${key.substring(0, Math.min(30, key.length))}"` +
+            `\n  Processed key ends with: "${key.substring(Math.max(0, key.length - 30))}"` +
+            `\n  Length of processed key: ${key.length}` +
+            `\n  Original GOOGLE_PRIVATE_KEY (first 30 chars, if set): "${rawPrivateKeyFromEnv?.substring(0, Math.min(30, rawPrivateKeyFromEnv.length)) ?? 'NOT SET'}"` +
+            `\n  Hint: Check for extra quotes, missing PEM markers, or incorrect newline escaping in your .env.local file for GOOGLE_PRIVATE_KEY.` +
+            ` The key in .env.local should typically be a single long string enclosed in double quotes, with literal \\n for newlines.`
         );
         PRIVATE_KEY = undefined; // Ensure it's undefined if structural check fails
     }
 } else {
-    // console.log('GOOGLE_PRIVATE_KEY is not set or is empty in environment variables.');
+    console.warn('GOOGLE_PRIVATE_KEY is not set, empty, or only whitespace in environment variables. PRIVATE_KEY will be undefined.');
     PRIVATE_KEY = undefined;
 }
 
@@ -43,19 +50,21 @@ if (rawPrivateKeyFromEnv && rawPrivateKeyFromEnv.trim() !== '') {
   if (!SHEET_ID) missingVarsWarn.push('GOOGLE_SHEET_ID');
   if (!SERVICE_ACCOUNT_EMAIL) missingVarsWarn.push('GOOGLE_SERVICE_ACCOUNT_EMAIL');
   
-  if (!PRIVATE_KEY) { // This condition is true if rawPrivateKeyFromEnv was empty, malformed, or not set
+  if (!PRIVATE_KEY) { 
     if (!rawPrivateKeyFromEnv) {
       missingVarsWarn.push('GOOGLE_PRIVATE_KEY (not set)');
     } else if (rawPrivateKeyFromEnv.trim() === '') {
-      missingVarsWarn.push('GOOGLE_PRIVATE_KEY (set but empty)');
+      missingVarsWarn.push('GOOGLE_PRIVATE_KEY (set but empty/whitespace)');
     }
     else {
-      missingVarsWarn.push('GOOGLE_PRIVATE_KEY (set but malformed/failed processing)');
+      // This case means rawPrivateKeyFromEnv was set, but PRIVATE_KEY is still undefined,
+      // implying the startsWith/endsWith check failed. The more detailed warning above already covered this.
+      missingVarsWarn.push('GOOGLE_PRIVATE_KEY (set but failed formatting checks - see detailed warning above)');
     }
   }
   if (missingVarsWarn.length > 0) {
     console.warn(
-      `SheetSync Initialization Warning: One or more Google Sheets API credentials (${missingVarsWarn.join(', ')}) are missing, empty, or malformed in environment variables. Sheet operations are likely to fail.`
+      `SheetSync Initialization Warning: One or more Google Sheets API credentials are problematic. Sheet operations are likely to fail. Problematic variables: [${missingVarsWarn.join(', ')}]`
     );
   }
 })();
@@ -67,13 +76,14 @@ export function getSheetsClient(): sheets_v4.Sheets | null {
     const missing = [];
     if (!SHEET_ID) missing.push('GOOGLE_SHEET_ID');
     if (!SERVICE_ACCOUNT_EMAIL) missing.push('GOOGLE_SERVICE_ACCOUNT_EMAIL');
-    if (!PRIVATE_KEY) {
+    if (!PRIVATE_KEY) { // This is true if rawPrivateKeyFromEnv was empty, malformed, or not set
         if (!rawPrivateKeyFromEnv) {
             missing.push('GOOGLE_PRIVATE_KEY (is not set)');
         } else if (rawPrivateKeyFromEnv.trim() === '') {
-            missing.push('GOOGLE_PRIVATE_KEY (is set but empty)');
+            missing.push('GOOGLE_PRIVATE_KEY (is set but empty/whitespace)');
         } else {
-            missing.push('GOOGLE_PRIVATE_KEY (is set but was malformed or failed structural checks)');
+            // This means rawPrivateKeyFromEnv was set, but the processing failed (e.g. PEM markers)
+            missing.push('GOOGLE_PRIVATE_KEY (is set but was malformed or failed structural checks - see warnings above)');
         }
     }
     if (missing.length > 0) console.error(`Detailed missing/problematic environment variables: ${missing.join(', ')}`);
@@ -94,7 +104,7 @@ export function getSheetsClient(): sheets_v4.Sheets | null {
     console.error('Error initializing Google Auth client:', error);
     if (error instanceof Error && (error.message.includes('DECODER routines') || error.message.includes('PEM routines') || error.message.includes('private key') || error.message.includes('asn1 encoding'))) {
         console.error(
-          'This error during auth initialization often indicates an issue with the GOOGLE_PRIVATE_KEY format or value. Ensure it is a valid PEM-formatted private key, with newline characters correctly handled (e.g., using "\\n" in .env files which are then unescaped, or actual newlines if your provider supports them for multi-line variables).'
+          'This error during auth initialization often indicates an issue with the GOOGLE_PRIVATE_KEY format or value even after initial checks. Ensure it is a valid PEM-formatted private key. The key might have passed basic structural checks but is still not parsable by the crypto library.'
         );
     }
     return null;
@@ -107,7 +117,7 @@ export async function getSheetData(): Promise<SheetRow[]> {
      console.warn('Google Sheets client is not available (possibly due to configuration issues). Returning empty data for dashboard.');
      return [];
   }
-  if (!SHEET_ID){ // This check is somewhat redundant if getSheetsClient handles it, but safe.
+  if (!SHEET_ID){ 
     console.warn('GOOGLE_SHEET_ID is not configured. Returning empty data for dashboard.');
     return [];
   }
@@ -145,15 +155,16 @@ export async function getSheetData(): Promise<SheetRow[]> {
                   rowData[header as keyof SheetRow] = value as 'High' | 'Medium' | 'Low';
                } else {
                   if (value !== '') {
-                    console.warn(`Invalid value "${value}" for ${header} in row. Defaulting to Medium.`);
+                    // console.warn(`Invalid value "${value}" for ${header} in row. Defaulting to Medium.`);
                   }
-                  rowData[header as keyof SheetRow] = 'Medium'; 
+                  rowData[header as keyof SheetRow] = 'Medium'; // Default if invalid or empty
                }
             } else {
                rowData[header as keyof SheetRow] = cellValue;
             }
         }
       });
+      // Ensure all expected keys exist, even if not in sheet headers or row is shorter
       expectedHeaders.forEach(eh => {
         const key = eh as keyof SheetRow;
         if (!(key in rowData)) {
@@ -165,7 +176,7 @@ export async function getSheetData(): Promise<SheetRow[]> {
         }
       });
       return rowData as SheetRow;
-    }).filter(row => Object.values(row).some(val => typeof val === 'string' && val.trim() !== ''));
+    }).filter(row => Object.values(row).some(val => typeof val === 'string' && val.trim() !== '')); // Filter out completely empty effective rows
 
 
   } catch (error) {
@@ -224,3 +235,4 @@ export async function appendSheetRow(rowData: Omit<SheetRow, ''>): Promise<boole
     return false;
   }
 }
+
