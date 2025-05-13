@@ -1,4 +1,3 @@
-
 'use server';
 
 import { z } from 'zod';
@@ -86,10 +85,12 @@ export async function submitDataAction(
     const success = await appendSheetRow(dataToAppend);
 
     if (success) {
-      revalidatePath('/'); // Revalidate the homepage cache to show the new data
-      // To prevent potential logout issues after submission, we are not revalidating /admin immediately.
-      // The admin dashboard preview might require a manual refresh to see the latest submitted data.
-      return { message: 'Data submitted successfully! The public dashboard has been updated. The admin preview may require a refresh to show the latest entry.', success: true };
+      // Removed revalidatePath('/') to prevent potential logout issues on the admin page.
+      // The public dashboard and admin preview will now require a manual refresh to see the latest entry.
+      return { 
+        message: 'Data submitted successfully! The public dashboard and admin preview may require a manual refresh to show the latest entry.', 
+        success: true 
+      };
     } else {
       return { message: 'Failed to submit data to Google Sheet. Please check the server console logs for more specific error details from the Google Sheets API.', success: false };
     }
@@ -212,7 +213,7 @@ export async function testSheetConnectionAction(
         details = `Authentication Failed. This can be due to an invalid service account email, an incorrectly formatted or expired private key, or issues with the Google Cloud project setup. Ensure GOOGLE_PRIVATE_KEY is valid.`;
     } else if (error.message?.includes('error:0A000152:SSL routines::unsafe legacy renegotiation disabled') || error.message?.includes('UNABLE_TO_GET_ISSUER_CERT_LOCALLY')) {
         details = `SSL/TLS connection issue. This might be a network configuration problem, proxy issue, or an outdated CA certificate store on the server. Original error: ${error.message}`;
-    } else if (error.message?.includes('error:1E08010C:DECODER routines::unsupported') || error.message?.includes('PEM routines') || error.message?.includes('private key') || error.message?.includes('asn1 encoding')) {
+    } else if (error.message?.includes('error:1E08010C:DECODER routines::unsupported') || error.message?.includes('PEM routines') || error.message?.includes('private key') || error.message?.includes('asn1 encoding'))) {
         details = `Private key format error. The GOOGLE_PRIVATE_KEY provided is likely malformed or not a valid PEM key. It should start with '-----BEGIN PRIVATE KEY-----' and end with '-----END PRIVATE KEY-----', with the key content in between. Original error: ${error.message}`;
     }
     
@@ -224,3 +225,4 @@ export async function testSheetConnectionAction(
     };
   }
 }
+
