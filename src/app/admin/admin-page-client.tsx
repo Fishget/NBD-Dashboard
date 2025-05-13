@@ -1,21 +1,68 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { AdminForm } from '@/components/admin-form';
 import { SheetConfigForm } from '@/components/sheet-config-form';
 import { LogoutButton } from '@/components/logout-button';
 import { ConnectionTester } from '@/components/connection-tester';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { TestTubeDiagonal, Eye, EyeOff, LayoutGrid, Settings } from 'lucide-react';
+import { TestTubeDiagonal, Eye, EyeOff, LayoutGrid, Settings, Table as TableIcon } from 'lucide-react';
 import { LoginForm } from '@/components/login-form';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from '@/components/ui/separator';
+import { DashboardTable } from '@/components/dashboard-table';
+import { Skeleton } from '@/components/ui/skeleton';
+import { getSheetData } from '@/lib/sheets';
 
 interface AdminPageClientProps {
   initialLoggedIn: boolean;
 }
+
+// Helper component for loading skeleton
+function AdminTableSkeleton() {
+  return (
+    <div className="space-y-4">
+       <div className="flex justify-end">
+            <Skeleton className="h-10 w-[250px]" />
+       </div>
+      <div className="rounded-md border">
+        <div className="overflow-auto">
+          <table className="w-full caption-bottom text-sm">
+            <thead className="[&_tr]:border-b">
+              <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground"><Skeleton className="h-4 w-[150px]" /></th>
+                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground"><Skeleton className="h-4 w-[200px]" /></th>
+                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground"><Skeleton className="h-4 w-[100px]" /></th>
+                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground"><Skeleton className="h-4 w-[80px]" /></th>
+                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground"><Skeleton className="h-4 w-[100px]" /></th>
+              </tr>
+            </thead>
+            <tbody className="[&_tr:last-child]:border-0">
+              {[...Array(5)].map((_, i) => (
+                <tr key={i} className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                  <td className="p-4 align-middle"><Skeleton className="h-4 w-full" /></td>
+                  <td className="p-4 align-middle"><Skeleton className="h-4 w-full" /></td>
+                  <td className="p-4 align-middle"><Skeleton className="h-4 w-full" /></td>
+                  <td className="p-4 align-middle"><Skeleton className="h-4 w-full" /></td>
+                  <td className="p-4 align-middle"><Skeleton className="h-4 w-full" /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Data fetching component wrapped for Suspense for Admin Dashboard
+async function AdminDashboardDisplay() {
+  const data = await getSheetData();
+  return <DashboardTable initialData={data} />;
+}
+
 
 export default function AdminPageClient({ initialLoggedIn }: AdminPageClientProps) {
   const [loggedIn, setLoggedIn] = useState(initialLoggedIn);
@@ -53,7 +100,7 @@ export default function AdminPageClient({ initialLoggedIn }: AdminPageClientProp
       </div>
 
       <Tabs defaultValue="data-entry" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:w-[400px]">
+        <TabsList className="grid w-full grid-cols-3 md:w-[600px]">
           <TabsTrigger value="data-entry">
             <LayoutGrid className="mr-2 h-4 w-4" />
             Data Entry
@@ -61,6 +108,10 @@ export default function AdminPageClient({ initialLoggedIn }: AdminPageClientProp
           <TabsTrigger value="configuration">
             <Settings className="mr-2 h-4 w-4" />
             Sheet Configuration
+          </TabsTrigger>
+          <TabsTrigger value="view-dashboard">
+            <TableIcon className="mr-2 h-4 w-4" />
+            View Dashboard
           </TabsTrigger>
         </TabsList>
 
@@ -122,6 +173,20 @@ export default function AdminPageClient({ initialLoggedIn }: AdminPageClientProp
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="view-dashboard" className="mt-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Dashboard Preview</CardTitle>
+                    <CardDescription>View the current data from the Google Sheet.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Suspense fallback={<AdminTableSkeleton />}>
+                        <AdminDashboardDisplay />
+                    </Suspense>
+                </CardContent>
+            </Card>
         </TabsContent>
       </Tabs>
     </div>
