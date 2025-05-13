@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -39,7 +40,7 @@ export function DashboardTable({ initialData }: DashboardTableProps) {
   const [currentPage, setCurrentPage] = React.useState(1);
   const [rowsPerPage, setRowsPerPage] = React.useState(50);
 
-  const [showCharts, setShowCharts] = React.useState(true); // Charts visible by default
+  const [showCharts, setShowCharts] = React.useState(false); // Charts hidden by default
   const [chartFilter, setChartFilter] = React.useState<ChartFilterType>(null);
 
   React.useEffect(() => {
@@ -243,7 +244,9 @@ export function DashboardTable({ initialData }: DashboardTableProps) {
              {/* Priority x Probability Matrix - Takes full width */}
             <div className="p-4 border rounded-lg shadow-sm bg-card">
                 <h3 className="text-lg font-semibold mb-3 text-center">Priority x Probability Matrix</h3>
-                <PriorityProbabilityMatrix data={initialData || []} onFilter={handleChartFilter} currentFilter={chartFilter} />
+                <div className="w-full max-w-sm mx-auto"> {/* Reduced max-w for smaller matrix */}
+                    <PriorityProbabilityMatrix data={initialData || []} onFilter={handleChartFilter} currentFilter={chartFilter} />
+                </div>
             </div>
             
             {/* Container for Priority and Probability charts - side by side on medium screens and up */}
