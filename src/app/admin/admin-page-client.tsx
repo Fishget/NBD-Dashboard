@@ -1,14 +1,14 @@
-'use client';
+${'use client'}';
 
 import { useState, useEffect, Suspense } from 'react';
 import type { ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { AdminForm } from '@/components/admin-form';
 import { SheetConfigForm } from '@/components/sheet-config-form';
-import { LogoutButton } from '@/components/logout-button';
+// LogoutButton component is not used directly here anymore, form action handles it.
 import { ConnectionTester } from '@/components/connection-tester';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { TestTubeDiagonal, Eye, EyeOff, LayoutGrid, Settings, Table as TableIcon, InfoIcon, RefreshCw, LogOut } from 'lucide-react';
+import { TestTubeDiagonal, Eye, EyeOff, LayoutGrid, Settings, Table as TableIcon, RefreshCw, LogOut } from 'lucide-react';
 import { LoginForm } from '@/components/login-form';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,6 +17,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { cn } from '@/lib/utils';
 import { logoutAction } from '@/lib/actions';
+import { useToast } from "@/hooks/use-toast";
 
 
 interface AdminPageClientProps {
@@ -67,6 +68,7 @@ export default function AdminPageClient({ initialLoggedIn, dashboardDisplaySlot 
   const [showConfigFormOverride, setShowConfigFormOverride] = useState(false);
   const [isDashboardRefreshing, setIsDashboardRefreshing] = useState(false);
   const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
     setLoggedIn(initialLoggedIn);
@@ -79,24 +81,41 @@ export default function AdminPageClient({ initialLoggedIn, dashboardDisplaySlot 
   const handleConnectionSuccess = () => {
     setIsConnectionVerified(true);
     setShowConfigFormOverride(false);
-    router.refresh(); // Refresh to potentially hide config form if connection becomes verified
+    router.refresh(); 
   };
 
   const toggleShowConfigForm = () => {
     setShowConfigFormOverride(prev => !prev);
   }
 
-  const handleRefreshDashboard = async () => {
+  const handleManualRefreshDashboard = async () => {
     if (isDashboardRefreshing) return;
     setIsDashboardRefreshing(true);
-    router.refresh();
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    router.refresh(); // Manually refresh the route to get fresh data
+    // Simulate delay for visual feedback; in a real app, this might await data loading confirmation
+    await new Promise(resolve => setTimeout(resolve, 1000)); 
     setIsDashboardRefreshing(false);
   };
 
+  const handleFormSubmissionSuccess = () => {
+    // This is called when AdminForm successfully submits data.
+    // The server action `submitDataAction` already calls `revalidatePath('/admin')`.
+    // This invalidates the server-side cache for the admin page data.
+    // The dashboard preview will reflect changes on the next manual refresh or navigation.
+    // We are INTENTIONALLY NOT calling router.refresh() here to prevent the automatic page refresh.
+    toast({
+      title: "Data Submitted",
+      description: "Entry added. Refresh dashboard preview to see changes.",
+    });
+    // The form reset is handled within AdminForm itself.
+  };
+
+
   const handleClientLogout = () => {
     setLoggedIn(false);
-    // Additional client-side cleanup if necessary
+    // Client-side state is updated immediately.
+    // The server action handles cookie clearance.
+    // Next.js router will handle redirection on next navigation or if page tries to access protected data.
   };
 
 
@@ -111,9 +130,8 @@ export default function AdminPageClient({ initialLoggedIn, dashboardDisplaySlot 
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Admin Login</h1>
         <form action={async () => {
-          await logoutAction(); // Server action
-          handleClientLogout(); // Update client state
-          // router.refresh(); // Let Next.js handle redirection/refresh based on auth state
+          await logoutAction(); 
+          handleClientLogout(); 
         }}>
           <Button type="submit" variant="outline" size="sm">
             <LogOut className="mr-2 h-4 w-4" />
@@ -136,9 +154,8 @@ export default function AdminPageClient({ initialLoggedIn, dashboardDisplaySlot 
 
         <TabsContent value="data-entry" className="mt-6 space-y-8">
           <Card>
-            {/* Removed CardHeader and CardDescription for "Add New Entry" */}
-            <CardContent className="pt-6"> {/* Added pt-6 since header is removed */}
-              <AdminForm onSuccessfulSubmit={handleRefreshDashboard} />
+            <CardContent className="pt-6">
+              <AdminForm onSuccessfulSubmit={handleFormSubmissionSuccess} />
             </CardContent>
           </Card>
 
@@ -155,19 +172,11 @@ export default function AdminPageClient({ initialLoggedIn, dashboardDisplaySlot 
                     <CardHeader>
                         <div className="flex justify-between items-center">
                            <CardTitle>Live Dashboard Preview</CardTitle>
-                           <Button variant="outline" size="sm" onClick={handleRefreshDashboard} disabled={isDashboardRefreshing}>
+                           <Button variant="outline" size="sm" onClick={handleManualRefreshDashboard} disabled={isDashboardRefreshing}>
                                <RefreshCw className={cn("mr-2 h-4 w-4", isDashboardRefreshing && "animate-spin-slow")} />
                                {isDashboardRefreshing ? 'Refreshing...' : 'Refresh'}
                            </Button>
                         </div>
-                        {/* Removed the CardDescription for dashboard preview
-                        <CardDescription className="flex items-start gap-2 pt-2">
-                           <InfoIcon className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-                           <span>
-                             This is a read-only preview of the current data. Configuration errors might affect display.
-                           </span>
-                        </CardDescription>
-                        */}
                     </CardHeader>
                     <CardContent>
                         <Suspense fallback={<AdminTableSkeleton />}>
