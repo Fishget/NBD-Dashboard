@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useActionState, useEffect, useState } from 'react'; // Correct import for useActionState
@@ -20,7 +19,7 @@ function SubmitButton() {
   const { pending } = useFormStatus();
   return (
     <Button type="submit" disabled={pending}>
-      {pending ? 'Validating...' : 'Validate & Save Configuration'}
+      {pending ? 'Validating & Generating Preview...' : 'Generate .env.local Content Preview'}
     </Button>
   );
 }
@@ -49,11 +48,10 @@ export function SheetConfigForm() {
 
     let envFormattedPrivateKey: string;
     if (formPrivateKey && typeof formPrivateKey === 'string' && formPrivateKey.trim()) {
-      // Replace actual newlines with literal '\n' for the .env string representation
       const escapedKey = formPrivateKey
-        .trim() // Trim whitespace from the whole key block first
-        .replace(/\r\n/g, '\n') // Normalize Windows newlines
-        .replace(/\n/g, '\\n'); // Escape newlines for single-line .env representation
+        .trim() 
+        .replace(/\r\n/g, '\n') 
+        .replace(/\n/g, '\\n'); 
       envFormattedPrivateKey = `"${escapedKey}"`;
     } else {
       envFormattedPrivateKey = '"-----BEGIN PRIVATE KEY-----\\nYOUR_PRIVATE_KEY_LINE_1\\nYOUR_PRIVATE_KEY_LINE_2\\n-----END PRIVATE KEY-----"';
@@ -115,8 +113,7 @@ ADMIN_PASSWORD=${adminPassword}
           Google Sheet Configuration
         </CardTitle>
         <CardDescription>
-          Enter the connection details for your Google Sheet. These settings are validated here.
-          Generate the content for your <code className="font-mono bg-muted px-1 py-0.5 rounded">.env.local</code> file below, then save this configuration.
+          Enter the connection details for your Google Sheet. Use the form below to generate the content for your <code className="font-mono bg-muted px-1 py-0.5 rounded">.env.local</code> file. After generating and copying the content, you must manually update your <code className="font-mono bg-muted px-1 py-0.5 rounded">.env.local</code> file and restart the server.
         </CardDescription>
       </CardHeader>
       {!state?.success && state?.message && !state.errors && (
@@ -243,7 +240,7 @@ ADMIN_PASSWORD=${adminPassword}
                 <Info className="h-4 w-4" />
                 <AlertTitle>Configuration Persistence</AlertTitle>
                 <AlertDescription>
-                    Validating and saving these settings confirms their format. However, the application backend primarily relies on **environment variables** set during startup (e.g., in <code className="font-mono bg-muted px-1 py-0.5 rounded">.env.local</code> or hosting provider settings).
+                    Generating this preview and validating the settings confirms their format. However, the application backend primarily relies on **environment variables** set during startup (e.g., in <code className="font-mono bg-muted px-1 py-0.5 rounded">.env.local</code> or hosting provider settings).
                     <br /><br />
                     For these changes to be used by the application, you **must** manually update your <code className="font-mono bg-muted px-1 py-0.5 rounded">.env.local</code> file (using the preview above) and then **restart or redeploy** your application.
                 </AlertDescription>
@@ -258,4 +255,3 @@ ADMIN_PASSWORD=${adminPassword}
     </Card>
   );
 }
-
