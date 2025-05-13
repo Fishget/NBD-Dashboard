@@ -1,16 +1,18 @@
+
 'use server';
 
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { checkCredentials, setAuthCookie, clearAuthCookie } from './auth';
 import { loginSchema, sheetRowSchema, sheetConfigSchema } from './validators'; // Added sheetConfigSchema
-import { appendSheetRow } from './sheets';
+import { appendSheetRow, getSheetsClient } from './sheets'; // Added getSheetsClient
 import type { SheetRowFormData, SheetConfigFormData } from './validators'; // Added SheetConfigFormData
 
 export type FormState = {
   message: string;
   success: boolean;
   errors?: Record<string, string[] | undefined>;
+  details?: string; // Optional details field for test connection
 };
 
 export async function loginAction(
@@ -143,12 +145,85 @@ export async function saveSheetConfigAction(
     // For now, just return success after validation.
 
     return {
-        message: 'Configuration validated successfully. Remember to update environment variables and restart the server for changes to take effect.',
+        message: 'Configuration validated successfully. Remember to update environment variables and restart/redeploy the server for these changes to be used by the application backend.',
         success: true
     };
 
   } catch (error) {
     console.error('Save sheet config error:', error);
     return { message: 'An unexpected error occurred while validating the configuration.', success: false };
+  }
+}
+
+export async function testSheetConnectionAction(
+  prevState: FormState | null
+): Promise<FormState> {
+  const missingEnvVars = [];
+  if (!process.env.GOOGLE_SHEET_ID) missingEnvVars.push('GOOGLE_SHEET_ID');
+  if (!process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL) missingEnvVars.push('GOOGLE_SERVICE_ACCOUNT_EMAIL');
+  if (!process.env.GOOGLE_PRIVATE_KEY) missingEnvVars.push('GOOGLE_PRIVATE_KEY');
+  if (!process.env.GOOGLE_SHEET_RANGE) missingEnvVars.push('GOOGLE_SHEET_RANGE'); // Though not strictly for client init, it's part of config
+
+  if (missingEnvVars.length > 0) {
+    return {
+      success: false,
+      message: 'Connection test failed: Server is missing required environment variables.',
+      details: `Missing: ${missingEnvVars.join(', ')}. Please ensure these are set in your .env.local file or hosting environment and the server is restarted.`,
+    };
+  }
+
+  const sheets = getSheetsClient();
+  if (!sheets) {
+    return {
+      success: false,
+      message: 'Connection test failed: Could not initialize Google Sheets client.',
+      details: 'This usually indicates an issue with the service account credentials (email or private key format/value) or their parsing. Check server logs for more specific errors related to Google Auth initialization.',
+    };
+  }
+
+  try {
+    // Perform a benign read operation to test the connection and permissions
+    const response = await sheets.spreadsheets.get({
+      spreadsheetId: process.env.GOOGLE_SHEET_ID,
+      fields: 'properties.title', // Requesting only the title is a lightweight check
+    });
+
+    if (response.status === 200 && response.data.properties?.title) {
+      return {
+        success: true,
+        message: 'Connection test successful!',
+        details: `Successfully connected to sheet titled: "${response.data.properties.title}". The application should be able to read from and write to this sheet if permissions are correctly set.`,
+      };
+    } else {
+      return {
+        success: false,
+        message: 'Connection test partially successful: Client initialized, but could not retrieve sheet properties.',
+        details: `Received status ${response.status}. This might indicate issues with the Sheet ID or permissions for the service account.`,
+      };
+    }
+  } catch (error: any) {
+    console.error('Google Sheets connection test error:', error);
+    let details = 'An unexpected error occurred during the connection test.';
+    if (error.message) {
+      details = error.message;
+    }
+    if (error.response?.data?.error?.message) {
+        details = error.response.data.error.message;
+    }
+
+    if (details.includes('PERMISSION_DENIED')) {
+        details = `Permission Denied. Ensure the service account (${process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL}) has at least 'Viewer' (for reading) and 'Editor' (for writing) access to the Google Sheet (ID: ${process.env.GOOGLE_SHEET_ID}).`;
+    } else if (details.includes('Requested entity was not found')) {
+        details = `Sheet Not Found. Verify that the GOOGLE_SHEET_ID ('${process.env.GOOGLE_SHEET_ID}') is correct and the sheet exists.`;
+    } else if (details.includes('invalid_grant') || details.includes('Could not load the default credentials')) {
+        details = `Authentication Failed. This can be due to an invalid service account email, an incorrectly formatted or expired private key, or issues with the Google Cloud project setup.`;
+    }
+
+
+    return {
+      success: false,
+      message: 'Connection test failed during API call.',
+      details: details,
+    };
   }
 }

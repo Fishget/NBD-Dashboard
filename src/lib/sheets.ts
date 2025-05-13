@@ -1,3 +1,4 @@
+
 import { google } from 'googleapis';
 import type { sheets_v4 } from 'googleapis';
 
@@ -23,9 +24,15 @@ if (!SHEET_ID || !SERVICE_ACCOUNT_EMAIL || !PRIVATE_KEY) {
   );
 }
 
-function getSheetsClient(): sheets_v4.Sheets | null {
+export function getSheetsClient(): sheets_v4.Sheets | null {
   if (!SHEET_ID || !SERVICE_ACCOUNT_EMAIL || !PRIVATE_KEY) {
     console.error('Cannot initialize Sheets client: Essential Google Sheets API credentials are not fully set in environment variables.');
+    // Optionally, be more specific about which are missing for server logs
+    const missing = [];
+    if (!SHEET_ID) missing.push('GOOGLE_SHEET_ID');
+    if (!SERVICE_ACCOUNT_EMAIL) missing.push('GOOGLE_SERVICE_ACCOUNT_EMAIL');
+    if (!PRIVATE_KEY) missing.push('GOOGLE_PRIVATE_KEY');
+    console.error(`Missing environment variables: ${missing.join(', ')}`);
     return null;
   }
 
@@ -41,9 +48,9 @@ function getSheetsClient(): sheets_v4.Sheets | null {
     return google.sheets({ version: 'v4', auth });
   } catch (error) {
     console.error('Error initializing Google Auth client:', error);
-    if (error instanceof Error && (error.message.includes('DECODER routines') || error.message.includes('PEM routines') || error.message.includes('private key'))) {
+    if (error instanceof Error && (error.message.includes('DECODER routines') || error.message.includes('PEM routines') || error.message.includes('private key') || error.message.includes('asn1 encoding'))) {
         console.error(
-          'This error often indicates an issue with the GOOGLE_PRIVATE_KEY format or value in your environment variables. Ensure it is a valid PEM-formatted private key.'
+          'This error often indicates an issue with the GOOGLE_PRIVATE_KEY format or value in your environment variables. Ensure it is a valid PEM-formatted private key, with newline characters correctly handled (e.g., using "\\n" in .env files or actual newlines if your provider supports them for multi-line variables).'
         );
     }
     return null;
@@ -188,3 +195,4 @@ export async function appendSheetRow(rowData: Omit<SheetRow, ''>): Promise<boole
 //   console.log(`Updating row ${rowIndex} - Not implemented yet`);
 //   return false;
 // }
+
