@@ -26,11 +26,11 @@ function SubmitButton() {
 }
 
 export function SheetConfigForm() {
-  const defaultValues = {
-    sheetId: '',
-    sheetRange: 'Sheet1!A:E',
-    serviceAccountEmail: '',
-    privateKey: '',
+  const defaultValues: SheetConfigFormData = {
+    sheetId: process.env.NEXT_PUBLIC_GOOGLE_SHEET_ID_DEFAULT || '',
+    sheetRange: process.env.NEXT_PUBLIC_GOOGLE_SHEET_RANGE_DEFAULT || 'Sheet1!A:E',
+    serviceAccountEmail: process.env.NEXT_PUBLIC_GOOGLE_SERVICE_ACCOUNT_EMAIL_DEFAULT || '',
+    privateKey: process.env.NEXT_PUBLIC_GOOGLE_PRIVATE_KEY_DEFAULT || '',
   };
 
   const [state, formAction] = useActionState<FormState | null, FormData>(saveSheetConfigAction, null);
@@ -49,14 +49,18 @@ export function SheetConfigForm() {
 
     let envFormattedPrivateKey: string;
     if (formPrivateKey && typeof formPrivateKey === 'string' && formPrivateKey.trim()) {
-      const escapedKey = formPrivateKey.trim().replace(/\n/g, '\\n');
+      // Replace actual newlines with literal '\n' for the .env string representation
+      const escapedKey = formPrivateKey
+        .trim() // Trim whitespace from the whole key block first
+        .replace(/\r\n/g, '\n') // Normalize Windows newlines
+        .replace(/\n/g, '\\n'); // Escape newlines for single-line .env representation
       envFormattedPrivateKey = `"${escapedKey}"`;
     } else {
       envFormattedPrivateKey = '"-----BEGIN PRIVATE KEY-----\\nYOUR_PRIVATE_KEY_LINE_1\\nYOUR_PRIVATE_KEY_LINE_2\\n-----END PRIVATE KEY-----"';
     }
 
-    const adminUsername = 'admin'; // Placeholder or fetch from actual env if needed for display
-    const adminPassword = 'password'; // Placeholder
+    const adminUsername = process.env.NEXT_PUBLIC_ADMIN_USERNAME_DEFAULT || 'admin';
+    const adminPassword = process.env.NEXT_PUBLIC_ADMIN_PASSWORD_DEFAULT || 'password';
 
     const content = `
 # Google Sheets API Credentials
@@ -126,7 +130,7 @@ ADMIN_PASSWORD=${adminPassword}
       )}
       <Form {...form}>
         <form action={formAction}>
-          <CardContent className="space-y-6"> {/* Increased spacing for new section */}
+          <CardContent className="space-y-6">
             <FormField
               control={form.control}
               name="sheetId"
@@ -188,7 +192,7 @@ ADMIN_PASSWORD=${adminPassword}
                 <FormItem>
                   <FormLabel>Private Key (<code className="font-mono text-xs">GOOGLE_PRIVATE_KEY</code>)</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Paste the service account private key here (starts with -----BEGIN PRIVATE KEY-----)" {...field} rows={6} />
+                    <Textarea placeholder="Paste the service account private key here (starts with -----BEGIN PRIVATE KEY-----)" {...field} rows={8} />
                   </FormControl>
                    <FormDescription>
                      Paste the entire private key string from your service account JSON file.
@@ -203,16 +207,15 @@ ADMIN_PASSWORD=${adminPassword}
               )}
             />
 
-            {/* .env.local Preview Section */}
             <Card className="shadow-md">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg"> {/* Slightly smaller title */}
+                <CardTitle className="flex items-center gap-2 text-lg">
                   <FileText className="h-5 w-5" />
                   Preview for <code className="font-mono bg-muted px-1.5 py-1 rounded">.env.local</code>
                 </CardTitle>
                 <CardDescription>
                   Based on the values entered above, copy the content below and paste it into your <code className="font-mono bg-muted px-1 py-0.5 rounded">.env.local</code> file in the project root.
-                  After updating the file, you must restart your Next.js development server.
+                  After updating the file, you **must restart your Next.js development server**.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -255,3 +258,4 @@ ADMIN_PASSWORD=${adminPassword}
     </Card>
   );
 }
+
