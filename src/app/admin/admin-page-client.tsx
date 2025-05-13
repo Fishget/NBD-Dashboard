@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
+import type { ReactNode } from 'react';
 import { AdminForm } from '@/components/admin-form';
 import { SheetConfigForm } from '@/components/sheet-config-form';
 import { LogoutButton } from '@/components/logout-button';
@@ -14,11 +15,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import AdminDashboardDisplayWrapper from '@/components/admin-dashboard-display-wrapper';
+// AdminDashboardDisplayWrapper is now passed as a prop
 
 
 interface AdminPageClientProps {
   initialLoggedIn: boolean;
+  dashboardDisplaySlot: ReactNode;
 }
 
 // Helper component for loading skeleton
@@ -59,7 +61,7 @@ function AdminTableSkeleton() {
 }
 
 
-export default function AdminPageClient({ initialLoggedIn }: AdminPageClientProps) {
+export default function AdminPageClient({ initialLoggedIn, dashboardDisplaySlot }: AdminPageClientProps) {
   const [loggedIn, setLoggedIn] = useState(initialLoggedIn);
   const [isConnectionVerified, setIsConnectionVerified] = useState(false);
   const [showConfigFormOverride, setShowConfigFormOverride] = useState(false);
@@ -139,7 +141,7 @@ export default function AdminPageClient({ initialLoggedIn }: AdminPageClientProp
                     </CardHeader>
                     <CardContent>
                         <Suspense fallback={<AdminTableSkeleton />}>
-                            <AdminDashboardDisplayWrapper />
+                            {dashboardDisplaySlot}
                         </Suspense>
                     </CardContent>
                 </Card>
