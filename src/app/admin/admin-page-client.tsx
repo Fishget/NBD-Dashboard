@@ -1,4 +1,4 @@
-${'use client'}';
+'use client';
 
 import { useState, useEffect, Suspense } from 'react';
 import type { ReactNode } from 'react';
@@ -81,7 +81,7 @@ export default function AdminPageClient({ initialLoggedIn, dashboardDisplaySlot 
   const handleConnectionSuccess = () => {
     setIsConnectionVerified(true);
     setShowConfigFormOverride(false);
-    router.refresh(); 
+    // router.refresh(); // Removed to prevent potential logout on config change
   };
 
   const toggleShowConfigForm = () => {
@@ -91,31 +91,23 @@ export default function AdminPageClient({ initialLoggedIn, dashboardDisplaySlot 
   const handleManualRefreshDashboard = async () => {
     if (isDashboardRefreshing) return;
     setIsDashboardRefreshing(true);
-    router.refresh(); // Manually refresh the route to get fresh data
-    // Simulate delay for visual feedback; in a real app, this might await data loading confirmation
+    router.refresh(); 
     await new Promise(resolve => setTimeout(resolve, 1000)); 
     setIsDashboardRefreshing(false);
   };
 
   const handleFormSubmissionSuccess = () => {
-    // This is called when AdminForm successfully submits data.
-    // The server action `submitDataAction` already calls `revalidatePath('/admin')`.
-    // This invalidates the server-side cache for the admin page data.
-    // The dashboard preview will reflect changes on the next manual refresh or navigation.
-    // We are INTENTIONALLY NOT calling router.refresh() here to prevent the automatic page refresh.
     toast({
       title: "Data Submitted",
       description: "Entry added. Refresh dashboard preview to see changes.",
     });
     // The form reset is handled within AdminForm itself.
+    // No router.refresh() here to prevent logout or full page reload
   };
 
 
   const handleClientLogout = () => {
     setLoggedIn(false);
-    // Client-side state is updated immediately.
-    // The server action handles cookie clearance.
-    // Next.js router will handle redirection on next navigation or if page tries to access protected data.
   };
 
 
