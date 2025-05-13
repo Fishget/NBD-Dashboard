@@ -23,16 +23,37 @@ export type SheetRowFormData = z.infer<typeof sheetRowSchema>;
 
 // Schema for Google Sheet Configuration Form
 export const sheetConfigSchema = z.object({
-    sheetId: z.string().min(10, 'Sheet ID seems too short').trim(), // Basic check
+    sheetId: z.string().min(10, 'Sheet ID seems too short. Please check the copied ID.').trim(),
     sheetRange: z.string()
                 .min(3, 'Sheet range is required (e.g., Sheet1!A:E)')
-                .regex(/^[a-zA-Z0-9\s]+!([A-Z]+):([A-Z]+)$/, 'Invalid range format (e.g., Sheet1!A:E)'),
-    serviceAccountEmail: z.string().email('Invalid service account email format'),
+                .regex(/^[a-zA-Z0-9\s]+!([A-Z]+):([A-Z]+)$/, 'Invalid range format. Expected format like "Sheet1!A:E" with uppercase column letters.'),
+    serviceAccountEmail: z.string().email('Invalid service account email format. Please enter a valid email address.'),
     privateKey: z.string()
-                 .min(100, 'Private key seems too short') // Very basic check
-                 .startsWith('-----BEGIN PRIVATE KEY-----', 'Private key must start with -----BEGIN PRIVATE KEY-----')
-                 .endsWith('-----END PRIVATE KEY-----', 'Private key must end with -----END PRIVATE KEY-----')
-                 .trim(), // Ensure no leading/trailing whitespace
+        .transform(key => {
+            // Normalize newlines (Windows \r\n to Unix \n) and then trim whitespace from the start and end of the entire key.
+            const normalizedKey = key.replace(/\r\n/g, '\n').trim();
+            return normalizedKey;
+        })
+        .pipe(
+            z.string()
+            .min(100, 'Private key is too short. Ensure you have copied the full key from the JSON file.')
+            .startsWith('-----BEGIN PRIVATE KEY-----', 'Private key must start with "-----BEGIN PRIVATE KEY-----". Check for missing parts or extra characters at the beginning.')
+            .endsWith('-----END PRIVATE KEY-----', 'Private key must end with "-----END PRIVATE KEY-----". Check for missing parts or extra characters at the end.')
+            .refine(key => key.includes('\n'), { message: "Private key must be a multi-line string. Ensure newlines are preserved when copying." })
+            .refine(key => {
+                // Check for common errors like pasting the entire JSON key-value pair or including quotes
+                if (key.startsWith('"-----BEGIN PRIVATE KEY-----') || key.startsWith("'-----BEGIN PRIVATE KEY-----")) {
+                    return false;
+                }
+                if (key.includes('"private_key":') || key.includes("'private_key':")) {
+                    return false;
+                }
+                // Ensure there's content between the header and footer
+                const coreKey = key.replace('-----BEGIN PRIVATE KEY-----', '').replace('-----END PRIVATE KEY-----', '').trim();
+                return coreKey.length > 0;
+            }, {message: "It looks like you might have pasted more than just the private key string, or the key content is empty. Please paste only the characters starting with -----BEGIN PRIVATE KEY----- and ending with -----END PRIVATE KEY-----."})
+        ),
 });
 
 export type SheetConfigFormData = z.infer<typeof sheetConfigSchema>;
+
