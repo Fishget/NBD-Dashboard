@@ -1,6 +1,6 @@
 'use client';
 
-import { useFormState, useFormStatus } from 'react-dom';
+import { useActionState, useFormStatus } from 'react'; // Updated import
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { loginAction, type FormState } from '@/lib/actions';
@@ -25,7 +25,8 @@ function SubmitButton() {
 }
 
 export function LoginForm() {
-  const [state, formAction] = useFormState<FormState | null, FormData>(loginAction, null);
+  // Updated hook usage
+  const [state, formAction] = useActionState<FormState | null, FormData>(loginAction, null);
   const { toast } = useToast();
 
   const form = useForm<LoginFormData>({

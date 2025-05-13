@@ -1,6 +1,6 @@
 'use client';
 
-import { useFormState, useFormStatus } from 'react-dom';
+import { useActionState, useFormStatus } from 'react'; // Updated import
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { saveSheetConfigAction, type FormState } from '@/lib/actions';
@@ -36,7 +36,8 @@ export function SheetConfigForm() {
   };
 
   // Initialize form state for the config form action
-  const [state, formAction] = useFormState<FormState | null, FormData>(saveSheetConfigAction, null);
+  // Updated hook usage
+  const [state, formAction] = useActionState<FormState | null, FormData>(saveSheetConfigAction, null);
   const { toast } = useToast();
 
   const form = useForm<SheetConfigFormData>({

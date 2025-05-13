@@ -1,6 +1,6 @@
 'use client';
 
-import { useFormState, useFormStatus } from 'react-dom';
+import { useActionState, useFormStatus } from 'react'; // Updated import
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { submitDataAction, type FormState } from '@/lib/actions';
@@ -27,7 +27,8 @@ function SubmitButton() {
 }
 
 export function AdminForm() {
-  const [state, formAction] = useFormState<FormState | null, FormData>(submitDataAction, null);
+  // Updated hook usage
+  const [state, formAction] = useActionState<FormState | null, FormData>(submitDataAction, null);
   const { toast } = useToast();
 
   const form = useForm<SheetRowFormData>({
