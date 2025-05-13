@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useEffect, useState } from 'react'; // Correct import for useActionState
+import React, { useActionState, useEffect, useState, useMemo } from 'react'; // Correct import for useActionState, added useMemo
 import { useFormStatus } from 'react-dom'; // Correct import for useFormStatus
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -25,12 +25,13 @@ function SubmitButton() {
 }
 
 export function SheetConfigForm() {
-  const defaultValues: SheetConfigFormData = {
+  const memoizedDefaultValues = useMemo<SheetConfigFormData>(() => ({
     sheetId: process.env.NEXT_PUBLIC_GOOGLE_SHEET_ID_DEFAULT || '',
     sheetRange: process.env.NEXT_PUBLIC_GOOGLE_SHEET_RANGE_DEFAULT || 'Sheet1!A:E',
     serviceAccountEmail: process.env.NEXT_PUBLIC_GOOGLE_SERVICE_ACCOUNT_EMAIL_DEFAULT || '',
     privateKey: process.env.NEXT_PUBLIC_GOOGLE_PRIVATE_KEY_DEFAULT || '',
-  };
+  }), []);
+
 
   const [state, formAction] = useActionState<FormState | null, FormData>(saveSheetConfigAction, null);
   const { toast } = useToast();
@@ -38,20 +39,24 @@ export function SheetConfigForm() {
 
   const form = useForm<SheetConfigFormData>({
     resolver: zodResolver(sheetConfigSchema),
-    defaultValues: defaultValues,
+    defaultValues: memoizedDefaultValues,
   });
 
   const watchedValues = useWatch({ control: form.control });
 
   useEffect(() => {
-    const { sheetId, sheetRange, serviceAccountEmail, privateKey: formPrivateKey } = watchedValues;
+    const { sheetId, sheetRange, serviceAccountEmail, privateKey: formPrivateKey } = watchedValues || {};
 
     let envFormattedPrivateKey: string;
-    if (formPrivateKey && typeof formPrivateKey === 'string' && formPrivateKey.trim()) {
-      const escapedKey = formPrivateKey
-        .trim() 
-        .replace(/\r\n/g, '\n') 
-        .replace(/\n/g, '\\n'); 
+    const currentPrivateKey = typeof formPrivateKey === 'string' ? formPrivateKey : '';
+
+
+    if (currentPrivateKey.trim()) {
+      // Format the key for .env: replace actual newlines with literal '\n' and wrap in quotes
+      const escapedKey = currentPrivateKey
+        .trim() // Trim leading/trailing whitespace from the key block itself
+        .replace(/\r\n/g, '\n') // Normalize Windows newlines
+        .replace(/\n/g, '\\n'); // Escape newlines for .env string
       envFormattedPrivateKey = `"${escapedKey}"`;
     } else {
       envFormattedPrivateKey = '"-----BEGIN PRIVATE KEY-----\\nYOUR_PRIVATE_KEY_LINE_1\\nYOUR_PRIVATE_KEY_LINE_2\\n-----END PRIVATE KEY-----"';
@@ -255,3 +260,4 @@ ADMIN_PASSWORD=${adminPassword}
     </Card>
   );
 }
+
