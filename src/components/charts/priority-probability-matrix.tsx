@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import type { SheetRow } from '../../../lib/types'; // Changed from @/lib/types
+import type { SheetRow } from '../../../lib/types';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { ChartFilterType } from '@/components/dashboard-table';
@@ -13,12 +13,12 @@ interface PriorityProbabilityMatrixProps {
 }
 
 const priorities: ('High' | 'Medium' | 'Low')[] = ['High', 'Medium', 'Low'];
-const probabilities: ('High' | 'Medium' | 'Low')[] = ['High', 'Medium', 'Low']; // Assuming these are the correct values
+const probabilities: ('High' | 'Medium' | 'Low')[] = ['High', 'Medium', 'Low'];
 
 const getPriorityColor = (priority: 'High' | 'Medium' | 'Low'): string => {
-  if (priority === 'High') return 'hsl(var(--chart-color-high))'; // Green
-  if (priority === 'Medium') return 'hsl(var(--chart-color-medium))'; // Orange/Yellow
-  return 'hsl(var(--chart-color-low))'; // Red
+  if (priority === 'High') return 'hsl(var(--chart-color-high))';
+  if (priority === 'Medium') return 'hsl(var(--chart-color-medium))';
+  return 'hsl(var(--chart-color-low))';
 };
 
 export function PriorityProbabilityMatrix({ data, onFilter, currentFilter }: PriorityProbabilityMatrixProps) {
@@ -28,15 +28,14 @@ export function PriorityProbabilityMatrix({ data, onFilter, currentFilter }: Pri
       Medium: { High: 0, Medium: 0, Low: 0 },
       Low: { High: 0, Medium: 0, Low: 0 },
     };
-    if (!Array.isArray(data)) return matrix; // Return empty matrix if data is not an array
+    if (!Array.isArray(data)) return matrix;
     
     data.forEach(row => {
-      // Ensure Priority and Probability are valid keys for the matrix
       if (
         priorities.includes(row.Priority) &&
         probabilities.includes(row.Probability) &&
-        matrix[row.Priority] && // Check if priority exists as a key
-        matrix[row.Priority][row.Probability] !== undefined // Check if probability exists for that priority
+        matrix[row.Priority] &&
+        matrix[row.Priority][row.Probability] !== undefined
       ) {
         matrix[row.Priority][row.Probability]++;
       }
@@ -53,7 +52,7 @@ export function PriorityProbabilityMatrix({ data, onFilter, currentFilter }: Pri
         }
       });
     });
-    return max === 0 ? 1 : max; // Avoid division by zero if all counts are 0
+    return max === 0 ? 1 : max;
   }, [matrixData]);
 
   const activePriority = currentFilter && 'priority' in currentFilter ? currentFilter.priority : null;
@@ -61,11 +60,9 @@ export function PriorityProbabilityMatrix({ data, onFilter, currentFilter }: Pri
 
   return (
     <TooltipProvider>
-      {/* Reduced height and cell padding/text size */}
-      <div className="grid grid-cols-4 gap-1 w-full h-[180px]"> 
-        {/* Corner Cell for Labels */}
+      {/* Removed fixed height h-[180px] to allow natural sizing */}
+      <div className="grid grid-cols-4 gap-1 w-full"> 
         <div className="flex items-center justify-center text-xs font-medium text-muted-foreground"></div>
-        {/* Probability Labels (Top Row) */}
         {probabilities.map(prob => (
           <div key={`label-prob-${prob}`} className="flex items-center justify-center p-1 text-xs font-medium text-muted-foreground">
             {prob}
@@ -74,14 +71,12 @@ export function PriorityProbabilityMatrix({ data, onFilter, currentFilter }: Pri
 
         {priorities.map(priority => (
           <React.Fragment key={`row-${priority}`}>
-            {/* Priority Label (First Column) */}
             <div className="flex items-center justify-center p-1 text-xs font-medium text-muted-foreground">
               {priority}
             </div>
-            {/* Data Cells */}
             {probabilities.map(probability => {
               const count = matrixData[priority][probability];
-              const opacity = count > 0 ? Math.max(0.2, count / maxCount) : 0.1; // Ensure some visibility even for 0
+              const opacity = count > 0 ? Math.max(0.2, count / maxCount) : 0.1;
               const isActive = activePriority === priority && activeProbability === probability;
 
               return (
@@ -90,19 +85,18 @@ export function PriorityProbabilityMatrix({ data, onFilter, currentFilter }: Pri
                     <div
                       onClick={() => onFilter({ priority, probability })}
                       className={cn(
-                        "flex items-center justify-center p-1 border rounded-md cursor-pointer transition-all aspect-square", // aspect-square makes cells square, reduced padding from p-1.5 to p-1
-                        "hover:ring-2 hover:ring-offset-2 hover:ring-primary", // Enhanced hover effect
-                        isActive && "ring-2 ring-offset-2 ring-primary shadow-lg", // Active cell styling
+                        "flex items-center justify-center p-1 border rounded-md cursor-pointer transition-all aspect-square", 
+                        "hover:ring-2 hover:ring-offset-2 hover:ring-primary",
+                        isActive && "ring-2 ring-offset-2 ring-primary shadow-lg",
                       )}
                       style={{
                         backgroundColor: getPriorityColor(priority),
-                        opacity: isActive ? 1 : opacity, // Full opacity if active
+                        opacity: isActive ? 1 : opacity,
                       }}
                       data-testid={`matrix-cell-${priority}-${probability}`}
                     >
                       <span className={cn(
-                        "font-bold text-sm", // Reduced text size from text-base to text-sm
-                        // Basic contrast logic, can be refined
+                        "font-bold text-sm", 
                         count > maxCount / 2 ? "text-white" : "text-black" 
                       )}>
                         {count}
@@ -123,4 +117,3 @@ export function PriorityProbabilityMatrix({ data, onFilter, currentFilter }: Pri
     </TooltipProvider>
   );
 }
-
