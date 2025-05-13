@@ -95,7 +95,7 @@ export default function AdminPageClient({ initialLoggedIn }: AdminPageClientProp
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Admin Panel</h1>
+        <h1 className="text-3xl font-bold">Admin Login</h1>
         <LogoutButton />
       </div>
 
@@ -157,7 +157,7 @@ export default function AdminPageClient({ initialLoggedIn }: AdminPageClientProp
               <CardDescription>
                 Test the live connection to Google Sheets using current server environment variables.
                 {isConnectionVerified && (
-                    <span className="block mt-2 text-sm text-green-700 dark:text-green-400">
+                    <span className="block mt-2 text-sm text-green-600 dark:text-green-400">
                         Successfully connected.
                         {!displayConfigForm && " Configuration form is currently hidden."}
                     </span>

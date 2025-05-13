@@ -1,3 +1,4 @@
+
 import { Suspense } from 'react';
 import { getSheetData } from '@/lib/sheets';
 import { DashboardTable } from '@/components/dashboard-table';
@@ -51,9 +52,9 @@ async function DashboardData() {
 export default function Home() {
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-primary">Donor Dashboard</h1>
+      <h1 className="text-3xl font-bold text-primary">NBD Dashboard</h1>
       <p className="text-muted-foreground">
-        Live data from Google Sheet. Use the filter input to search across all columns. Click column headers to sort.
+        Live Data
       </p>
       <Suspense fallback={<TableSkeleton />}>
         <DashboardData />

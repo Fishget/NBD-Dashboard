@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -15,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ArrowUpDown } from 'lucide-react';
 import type { SheetRow } from '@/lib/sheets';
+import { cn } from '@/lib/utils';
 
 interface DashboardTableProps {
   initialData: SheetRow[];
@@ -28,6 +30,10 @@ export function DashboardTable({ initialData }: DashboardTableProps) {
   const [filter, setFilter] = React.useState<string>('');
   const [sortKey, setSortKey] = React.useState<SortKey>(null);
   const [sortDirection, setSortDirection] = React.useState<SortDirection>('asc');
+
+  React.useEffect(() => {
+    setData(initialData);
+  } , [initialData]);
 
   const handleFilterChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setFilter(event.target.value.toLowerCase());
@@ -57,6 +63,10 @@ export function DashboardTable({ initialData }: DashboardTableProps) {
       const valA = a[sortKey];
       const valB = b[sortKey];
 
+      // Treat Priority and Probability specifically for sorting if needed
+      // For now, simple string comparison will work as High, Low, Medium sort alphabetically
+      // If custom sort order (High > Medium > Low) is desired, implement here.
+
       if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
       if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
       return 0;
@@ -70,6 +80,19 @@ export function DashboardTable({ initialData }: DashboardTableProps) {
     { key: 'Priority', label: 'Priority' },
     { key: 'Probability', label: 'Probability' },
   ];
+
+  const getStatusColorClass = (value: string): string => {
+    switch (value?.toLowerCase()) {
+      case 'high':
+        return 'text-green-600 dark:text-green-400 font-semibold';
+      case 'medium':
+        return 'text-yellow-600 dark:text-yellow-400 font-semibold';
+      case 'low':
+        return 'text-destructive font-semibold'; // Uses theme's destructive color for red
+      default:
+        return '';
+    }
+  };
 
   return (
     <div className="w-full space-y-4">
@@ -105,7 +128,13 @@ export function DashboardTable({ initialData }: DashboardTableProps) {
               sortedData.map((row, index) => (
                 <TableRow key={index}>
                   {columns.map((col) => (
-                     <TableCell key={col.key} className={col.key === 'Action/Next Step' ? 'min-w-[200px]' : ''}>
+                     <TableCell 
+                        key={col.key} 
+                        className={cn(
+                          col.key === 'Action/Next Step' ? 'min-w-[200px]' : '',
+                          (col.key === 'Priority' || col.key === 'Probability') && getStatusColorClass(String(row[col.key]))
+                        )}
+                      >
                       {row[col.key]}
                     </TableCell>
                   ))}

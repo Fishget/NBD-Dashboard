@@ -1,3 +1,4 @@
+
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import Link from 'next/link';
@@ -16,7 +17,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'SheetSync Dashboard',
+  title: 'NBD Dashboard',
   description: 'Dashboard synced with Google Sheets',
 };
 
@@ -38,10 +39,10 @@ export default function RootLayout({
           <header className="bg-primary text-primary-foreground p-4 shadow-md">
             <nav className="container mx-auto flex justify-between items-center">
               <Link href="/" className="text-xl font-bold">
-                SheetSync Dashboard
+                NBD Dashboard
               </Link>
               <Link href="/admin" className="text-sm font-medium hover:underline">
-                Admin Panel
+                Admin
               </Link>
             </nav>
           </header>
@@ -49,7 +50,7 @@ export default function RootLayout({
             {children}
           </main>
           <footer className="text-center p-4 text-muted-foreground text-sm">
-            © {new Date().getFullYear()} SheetSync Dashboard
+            © {new Date().getFullYear()} NBD Dashboard
           </footer>
         </div>
         <Toaster />
