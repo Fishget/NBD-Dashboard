@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -61,8 +62,8 @@ export function PriorityProbabilityMatrix({ data, onFilter, currentFilter }: Pri
 
   return (
     <TooltipProvider>
-      {/* Removed max-w-md and mx-auto to allow full width, set explicit height */}
-      <div className="grid grid-cols-4 gap-1 w-full h-[280px]">
+      {/* Reduced height from h-[280px] to h-[220px] to make the overall matrix smaller */}
+      <div className="grid grid-cols-4 gap-1 w-full h-[220px]"> 
         {/* Corner Cell for Labels */}
         <div className="flex items-center justify-center text-xs font-medium text-muted-foreground"></div>
         {/* Probability Labels (Top Row) */}
@@ -90,7 +91,7 @@ export function PriorityProbabilityMatrix({ data, onFilter, currentFilter }: Pri
                     <div
                       onClick={() => onFilter({ priority, probability })}
                       className={cn(
-                        "flex items-center justify-center p-2 border rounded-md cursor-pointer transition-all aspect-square", // aspect-square makes cells square
+                        "flex items-center justify-center p-1.5 border rounded-md cursor-pointer transition-all aspect-square", // aspect-square makes cells square, reduced padding from p-2 to p-1.5
                         "hover:ring-2 hover:ring-offset-2 hover:ring-primary", // Enhanced hover effect
                         isActive && "ring-2 ring-offset-2 ring-primary shadow-lg", // Active cell styling
                       )}
@@ -101,7 +102,7 @@ export function PriorityProbabilityMatrix({ data, onFilter, currentFilter }: Pri
                       data-testid={`matrix-cell-${priority}-${probability}`}
                     >
                       <span className={cn(
-                        "font-bold text-lg",
+                        "font-bold text-base", // Reduced text size from text-lg to text-base
                         // Basic contrast logic, can be refined
                         count > maxCount / 2 ? "text-white" : "text-black" 
                       )}>
