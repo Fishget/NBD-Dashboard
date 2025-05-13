@@ -85,7 +85,8 @@ function DashboardDataWrapper() {
           Dashboard View
         </CardTitle>
          <CardDescription>
-          Live data from Google Sheets. Charts and filters are available.
+          The dashboard is currently displaying with no live data. Data fetching from Google Sheets is disabled to ensure the application loads.
+          To enable live data, please ensure correct Google Sheets API configuration and re-enable data fetching logic in the application code.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -97,8 +98,8 @@ function DashboardDataWrapper() {
                         <p className="font-semibold text-card-foreground">Data Display Notice</p>
                         <p className="text-sm">
                             The dashboard is currently displaying with no live data.
-                            This may be due to missing or incorrect Google Sheets API configuration on the server (check <code className="font-mono text-xs bg-destructive/20 p-0.5 rounded">.env.local</code> and restart the server), or the sheet itself might be empty.
-                            Please ensure the Google Sheet connection is correctly set up in the Admin panel using the "Connection Test" and that data fetching logic is enabled if it was previously commented out for debugging.
+                            This may be due to missing or incorrect Google Sheets API configuration on the server (check <code className="font-mono text-xs bg-destructive/20 p-0.5 rounded">.env.local</code> and restart the server), the sheet itself might be empty, or data fetching is intentionally disabled.
+                            Please ensure the Google Sheet connection is correctly set up in the Admin panel and that data fetching logic is enabled if it was previously commented out.
                         </p>
                     </div>
                 </div>

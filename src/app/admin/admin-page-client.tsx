@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from '@/components/ui/separator';
 import { DashboardTable } from '@/components/dashboard-table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getSheetData } from '@/lib/sheets'; // Server action
+// import { getSheetData } from '@/lib/sheets'; // Server action - Commented out to "disconnect"
 import type { SheetRow } from '@/lib/types'; // Import SheetRow from the new types.ts
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
@@ -59,57 +59,13 @@ function AdminTableSkeleton() {
   );
 }
 
-
-async function AdminDashboardDisplayWrapper() {
-  let data: SheetRow[] = [];
-  let errorFetchingData = false;
-  let errorMessage = "Could not fetch data from Google Sheets. Please check server logs and connection settings.";
-
-  try {
-    // getSheetData should return [] if config is bad or API call fails.
-    // It should not throw an error that crashes this Server Component.
-    data = await getSheetData(); 
-    if (data === null || data.length === 0) {
-        // This case means getSheetData executed but returned no data.
-        // This could be due to an empty sheet OR a configuration issue silently handled in getSheetData.
-        // We want to provide a more specific message if possible.
-        // Checking if env vars are set as a proxy for "is config likely an issue?"
-        const envVarsLikelyMissing = !(process.env.GOOGLE_SHEET_ID && process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && process.env.GOOGLE_PRIVATE_KEY);
-        if (envVarsLikelyMissing) {
-            errorMessage = "Dashboard preview is empty. This is likely due to missing or incorrect Google Sheets API credentials on the server (e.g., in .env.local). Please configure and test the connection in the 'Sheet Configuration' tab and restart the server.";
-            errorFetchingData = true; // Treat as an error for display purposes
-        } else {
-            // Config seems to be there, so maybe the sheet is just empty or getSheetData filtered everything.
-            // DashboardTable will show "No data available..." in this case if data is indeed [].
-            // No explicit error message here unless data is explicitly null from a severe failure.
-        }
-    }
-  } catch (e: any) {
-    // This catch block is a fallback, ideally getSheetData handles its own errors and returns [].
-    console.error("AdminDashboardDisplayWrapper: Critical error during getSheetData call:", e.message, e.stack);
-    errorMessage = `A critical error occurred while trying to fetch sheet data: ${e.message}. Check server logs for more details.`;
-    errorFetchingData = true; 
-    data = []; // Ensure data is an empty array on error
-  }
-
-  if (errorFetchingData) {
-    return (
-      <div className="my-4 p-4 border border-destructive rounded-md bg-destructive/10">
-        <div className="flex items-center gap-3 text-destructive">
-          <ServerCrash className="h-8 w-8" />
-          <div>
-            <p className="font-semibold">Error Loading Dashboard Preview</p>
-            <p className="text-sm">
-              {errorMessage}
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-  // If data is empty due to an empty sheet (and config is okay), DashboardTable will show "No data available..."
-  // Pass empty array if data is null for any reason to prevent DashboardTable errors.
-  return <DashboardTable initialData={data || []} />;
+// This component no longer fetches data to "disconnect" from the server/Google Sheets for initial rendering.
+// It will render the DashboardTable with empty initial data.
+function AdminDashboardDisplayWrapper() {
+  // console.log("[AdminPageClient:AdminDashboardDisplayWrapper] Rendering with empty data to 'disconnect'.");
+  // The DashboardTable will show "No data available..." if initialData is empty.
+  // This message can be updated if a more specific "disconnected" state message is needed.
+  return <DashboardTable initialData={[]} />;
 }
 
 
@@ -187,8 +143,8 @@ export default function AdminPageClient({ initialLoggedIn }: AdminPageClientProp
                            <InfoIcon className="h-5 w-5 text-blue-500 mt-0.5 shrink-0" />
                            <span>
                              View the current data from the Google Sheet. This is a read-only preview. 
-                             If data is not shown or an error appears, it may indicate issues with the Google Sheets API configuration (e.g., in <code className="font-mono text-xs bg-muted p-0.5 rounded">.env.local</code>) or that the sheet is empty. 
-                             Use the 'Sheet Configuration' tab to verify settings.
+                             Data fetching is currently disabled for this preview to ensure the admin page loads without external dependencies.
+                             To see live data, ensure Google Sheets API configuration is correct and enable data fetching in the code.
                            </span>
                         </CardDescription>
                     </CardHeader>
