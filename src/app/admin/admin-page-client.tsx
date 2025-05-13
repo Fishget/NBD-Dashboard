@@ -13,8 +13,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from '@/components/ui/separator';
 import { DashboardTable } from '@/components/dashboard-table';
 import { Skeleton } from '@/components/ui/skeleton';
-// import { getSheetData } from '@/lib/sheets'; // Server action - Commented out to "disconnect"
-import type { SheetRow } from '../../lib/types'; // Changed from @/lib/types
+import { getSheetData } from '@/lib/sheets'; // Restored import
+import type { SheetRow } from '../../lib/types';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 
@@ -59,13 +59,57 @@ function AdminTableSkeleton() {
   );
 }
 
-// This component no longer fetches data to "disconnect" from the server/Google Sheets for initial rendering.
-// It will render the DashboardTable with empty initial data.
-function AdminDashboardDisplayWrapper() {
-  // console.log("[AdminPageClient:AdminDashboardDisplayWrapper] Rendering with empty data to 'disconnect'.");
-  // The DashboardTable will show "No data available..." if initialData is empty.
-  // This message can be updated if a more specific "disconnected" state message is needed.
-  return <DashboardTable initialData={[]} />;
+// This component now attempts to fetch data again.
+// It is an async component. If called directly from AdminPageClient (a 'use client' component),
+// it will cause an "async Client Component" error.
+// This should ideally be refactored or used in a Server Component context.
+async function AdminDashboardDisplayWrapper() {
+  // console.log("[AdminPageClient:AdminDashboardDisplayWrapper SC] Attempting to fetch data for admin dashboard.");
+  let data: SheetRow[] = [];
+  let errorOccurred = false;
+  try {
+    const fetchedData = await getSheetData();
+    data = Array.isArray(fetchedData) ? fetchedData : [];
+  } catch (error) {
+    console.error("[AdminPageClient:AdminDashboardDisplayWrapper SC] Failed to fetch data for admin dashboard:", error);
+    data = []; // Ensure data is an array on error
+    errorOccurred = true;
+  }
+
+  if (errorOccurred) {
+    return (
+        <div className="my-4 p-4 border border-destructive/20 rounded-md bg-destructive/10">
+            <div className="flex items-center gap-3 text-destructive">
+                <ServerCrash className="h-8 w-8" />
+                <div>
+                    <p className="font-semibold">Error Fetching Dashboard Preview Data</p>
+                    <p className="text-sm">
+                        Could not load data from Google Sheets for the preview. Please verify your API configuration and connection. Check server logs.
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
+  }
+  
+  if (data.length === 0 && !errorOccurred) {
+    return (
+         <div className="my-4 p-4 border border-dashed border-border rounded-md bg-muted/50">
+            <div className="flex items-center gap-3 text-muted-foreground">
+                <InfoIcon className="h-8 w-8 text-blue-500" />
+                <div>
+                    <p className="font-semibold text-card-foreground">No Data for Preview</p>
+                    <p className="text-sm">
+                        The Google Sheet appears to be empty or no data was returned for the preview.
+                        If this is unexpected, please check the sheet and your API configuration.
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
+  }
+
+  return <DashboardTable initialData={data} />;
 }
 
 
@@ -142,9 +186,8 @@ export default function AdminPageClient({ initialLoggedIn }: AdminPageClientProp
                         <CardDescription className="flex items-start gap-2">
                            <InfoIcon className="h-5 w-5 text-blue-500 mt-0.5 shrink-0" />
                            <span>
-                             View the current data from the Google Sheet. This is a read-only preview. 
-                             Data fetching is currently disabled for this preview to ensure the admin page loads without external dependencies.
-                             To see live data, ensure Google Sheets API configuration is correct and enable data fetching in the code.
+                             View the current data from the Google Sheet. This is a read-only preview.
+                             If data fetching fails, an error message will be displayed. Ensure Google Sheets API configuration is correct.
                            </span>
                         </CardDescription>
                     </CardHeader>

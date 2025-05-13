@@ -1,12 +1,11 @@
-'use client'; 
 
-import { Suspense, useState, useEffect } from 'react';
-import type { SheetRow } from '../lib/types'; // Changed from @/lib/types
+import { Suspense } from 'react';
+import type { SheetRow } from '../lib/types';
+import { getSheetData } from '@/lib/sheets';
 import { DashboardTable } from '@/components/dashboard-table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { InfoIcon, ServerCrash } from 'lucide-react'; 
+import { InfoIcon, ServerCrash } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-
 
 // Helper component for loading skeleton
 function TableSkeleton() {
@@ -45,38 +44,28 @@ function TableSkeleton() {
   );
 }
 
-// DashboardDataWrapper is a Client Component to manage client-side rendering of DashboardTable
-function DashboardDataWrapper() {
-  const [isMounted, setIsMounted] = useState(false);
-  // Initialize with empty array. Data fetching from server is currently disabled here
-  // to ensure the basic UI renders without relying on external data calls that might fail.
-  const [tableData, setTableData] = useState<SheetRow[]>([]); 
+// DashboardData is a Server Component to fetch data
+async function DashboardData() {
+  let tableData: SheetRow[] = [];
+  let errorOccurred = false;
+  let errorMessage = "The dashboard is currently displaying with no live data. Data fetching from Google Sheets is disabled to ensure the application loads. To enable live data, please ensure correct Google Sheets API configuration and re-enable data fetching logic in the application code.";
 
-  useEffect(() => {
-    // console.log("[Page:DashboardDataWrapper CC] Component did mount. Data fetching is currently DISABLED.");
-    setIsMounted(true);
-    // To enable actual data fetching from Google Sheets (via a Server Action),
-    // you would uncomment and implement the following:
-    // import { getSheetData } from '@/lib/sheets'; 
-    // async function fetchData() {
-    //   try {
-    //     // const data = await getSheetData(); // Call the Server Action
-    //     // setTableData(data || []); // Ensure data is an array
-    //     // console.log("[Page:DashboardDataWrapper CC] Data fetched (or attempted).");
-    //   } catch (error) {
-    //     // console.error("[Page:DashboardDataWrapper CC] Failed to fetch data client-side:", error);
-    //     // setTableData([]); // Set empty on error
-    //   }
-    // }
-    // fetchData(); 
-  }, []);
-
-  if (!isMounted) {
-    // console.log("[Page:DashboardDataWrapper CC] Not mounted yet, returning TableSkeleton.");
-    return <TableSkeleton />;
+  try {
+    // console.log("[Page:DashboardData SC] Attempting to fetch data.");
+    const data = await getSheetData();
+    tableData = Array.isArray(data) ? data : [];
+    if (tableData.length > 0) {
+        errorMessage = "Live data from Google Sheet. Use the filter input to search across all columns. Click column headers to sort.";
+    } else {
+        errorMessage = "No data available in the Google Sheet, or the sheet is empty. Please check the sheet and API configuration if you expect data.";
+    }
+  } catch (error: any) {
+    console.error("[Page:DashboardData SC] Failed to fetch data:", error);
+    errorOccurred = true;
+    tableData = []; // Ensure tableData is an array on error
+    errorMessage = `Error fetching data: ${error.message || 'Unknown error'}. Please check server logs and API configuration.`;
   }
 
-  // console.log("[Page:DashboardDataWrapper CC] Mounted, rendering content with DashboardTable.");
   return (
     <Card className="my-8 shadow-md">
       <CardHeader>
@@ -85,12 +74,25 @@ function DashboardDataWrapper() {
           Dashboard View
         </CardTitle>
          <CardDescription>
-          The dashboard is currently displaying with no live data. Data fetching from Google Sheets is disabled to ensure the application loads.
-          To enable live data, please ensure correct Google Sheets API configuration and re-enable data fetching logic in the application code.
+          {errorMessage}
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {(tableData === null || tableData.length === 0) && ( 
+        {errorOccurred && (
+             <div className="my-4 p-4 border border-destructive/20 rounded-md bg-destructive/10">
+                <div className="flex items-center gap-3 text-destructive">
+                    <ServerCrash className="h-8 w-8" />
+                    <div>
+                        <p className="font-semibold">Error Fetching Data</p>
+                        <p className="text-sm">
+                            Could not load data from Google Sheets. Please verify your API configuration in the admin panel and ensure the server can connect to Google Sheets. Check server logs for details.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        )}
+        {/* Display this message only if no error occurred but data is empty */}
+        {(!tableData || tableData.length === 0) && !errorOccurred && (
              <div className="my-4 p-4 border border-dashed border-border rounded-md bg-muted/50">
                 <div className="flex items-center gap-3 text-muted-foreground">
                     <ServerCrash className="h-8 w-8 text-destructive" />
@@ -106,8 +108,7 @@ function DashboardDataWrapper() {
             </div>
         )}
          <div className="mt-6">
-            {/* Pass an empty array if tableData is null/undefined to prevent errors in DashboardTable */}
-            <DashboardTable initialData={tableData || []} /> 
+            <DashboardTable initialData={tableData} />
         </div>
       </CardContent>
     </Card>
@@ -123,13 +124,10 @@ export default function Home() {
         Live Data
       </p>
       <Suspense fallback={<TableSkeleton />}>
-        <DashboardDataWrapper />
+        <DashboardData />
       </Suspense>
     </div>
   );
 }
 
-// Using force-dynamic can be helpful if underlying data changes frequently.
-// However, for diagnosing blank screen issues, client-side error handling and
-// robust server-side data fetching (to avoid SSR crashes) are more critical.
 export const dynamic = 'force-dynamic';
