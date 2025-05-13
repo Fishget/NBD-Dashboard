@@ -1,4 +1,5 @@
-${'use client'}';
+
+'use client';
 
 import { useState, useEffect, Suspense } from 'react';
 import { AdminForm } from '@/components/admin-form';
