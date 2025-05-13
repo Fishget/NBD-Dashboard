@@ -115,7 +115,7 @@ export function SheetConfigForm() {
                     <Input placeholder="e.g., Sheet1!A:E" {...field} />
                   </FormControl>
                    <FormDescription>
-                     The range where data is read and appended (e.g., Sheet1!A:E).
+                     The range where data is read and appended (e.g., Sheet1!A:E). Must be uppercase columns.
                    </FormDescription>
                   <FormMessage />
                    {state?.errors?.sheetRange && (
@@ -152,7 +152,9 @@ export function SheetConfigForm() {
                     <Textarea placeholder="Paste the service account private key here (starts with -----BEGIN PRIVATE KEY-----)" {...field} rows={6} />
                   </FormControl>
                    <FormDescription>
-                     Ensure the entire key, including BEGIN/END lines, is pasted correctly.
+                     Paste the entire private key string from your service account JSON file.
+                     It must start with <code>-----BEGIN PRIVATE KEY-----</code> and end with <code>-----END PRIVATE KEY-----</code>.
+                     Include all characters and line breaks (newlines) exactly as they appear in the JSON value for the "private_key" field.
                    </FormDescription>
                   <FormMessage />
                   {state?.errors?.privateKey && (
@@ -181,3 +183,4 @@ export function SheetConfigForm() {
     </Card>
   );
 }
+
