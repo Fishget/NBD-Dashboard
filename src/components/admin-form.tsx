@@ -132,7 +132,12 @@ export function AdminForm() {
                 render={({ field }) => (
                     <FormItem>
                     <FormLabel>Priority</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                    <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        value={field.value}
+                        name={field.name} // Ensure name attribute is passed for FormData
+                    >
                         <FormControl>
                         <SelectTrigger>
                             <SelectValue placeholder="Select Priority" />
@@ -158,7 +163,12 @@ export function AdminForm() {
                 render={({ field }) => (
                     <FormItem>
                     <FormLabel>Probability</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                     <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        value={field.value}
+                        name={field.name} // Ensure name attribute is passed for FormData
+                    >
                         <FormControl>
                         <SelectTrigger>
                             <SelectValue placeholder="Select Probability" />
