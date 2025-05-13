@@ -21,44 +21,56 @@ const SHEET_RANGE = process.env.GOOGLE_SHEET_RANGE || 'Sheet1!A:E'; // Default r
 let PRIVATE_KEY: string | undefined;
 const rawPrivateKeyFromEnv = process.env.GOOGLE_PRIVATE_KEY;
 
-if (rawPrivateKeyFromEnv && rawPrivateKeyFromEnv.trim() !== '') {
+if (typeof rawPrivateKeyFromEnv === 'string' && rawPrivateKeyFromEnv.trim() !== '') {
     let processedEnvVar = rawPrivateKeyFromEnv.trim();
-    // Strip surrounding quotes if present (common for multi-line env vars)
+    
+    // Strip surrounding quotes if present (common for multi-line env vars copied from JSON strings)
     if ((processedEnvVar.startsWith('"') && processedEnvVar.endsWith('"')) ||
         (processedEnvVar.startsWith("'") && processedEnvVar.endsWith("'"))) {
         processedEnvVar = processedEnvVar.substring(1, processedEnvVar.length - 1);
     }
 
-    // Now, process for escaped newlines and then trim again
-    let key = processedEnvVar.replace(/\\n/g, '\n').trim();
+    // Replace literal '\n' with actual newline characters
+    let keyWithNewlines = processedEnvVar.replace(/\\n/g, '\n');
+    
+    // Trim again after replacing newlines, in case of whitespace around the actual key block
+    keyWithNewlines = keyWithNewlines.trim();
 
-    // Validate basic PEM structure.
-    if (key.startsWith('-----BEGIN PRIVATE KEY-----') && key.endsWith('-----END PRIVATE KEY-----')) {
-        // Further check: ensure there's content between header and footer
-        const coreKeyContent = key.substring('-----BEGIN PRIVATE KEY-----'.length, key.length - '-----END PRIVATE KEY-----'.length).trim();
+    if (
+        keyWithNewlines.startsWith('-----BEGIN PRIVATE KEY-----') &&
+        keyWithNewlines.endsWith('-----END PRIVATE KEY-----')
+    ) {
+        const coreKeyContent = keyWithNewlines
+            .substring('-----BEGIN PRIVATE KEY-----'.length, keyWithNewlines.length - '-----END PRIVATE KEY-----'.length)
+            .trim();
         if (coreKeyContent.length > 0) {
-            PRIVATE_KEY = key;
+            PRIVATE_KEY = keyWithNewlines;
+            // console.log('Successfully processed GOOGLE_PRIVATE_KEY.');
         } else {
             console.warn(
-                'GOOGLE_PRIVATE_KEY appears to have valid PEM markers but no actual key content in between after processing. Sheet operations will fail.' +
-                `\n  Original GOOGLE_PRIVATE_KEY (trimmed, first 30 chars): "${(rawPrivateKeyFromEnv || "").trim().substring(0, Math.min(30, (rawPrivateKeyFromEnv || "").trim().length))}"`
+                'GOOGLE_PRIVATE_KEY warning: Found PEM markers but no content in between after processing. ' +
+                'Key length (after processing): ' + keyWithNewlines.length + '. ' +
+                'Original GOOGLE_PRIVATE_KEY (first 30 chars, trimmed): "' + (rawPrivateKeyFromEnv || "").trim().substring(0, 30) + '". ' +
+                'Sheet operations will likely fail.'
             );
             PRIVATE_KEY = undefined;
         }
     } else {
         console.warn(
-            'GOOGLE_PRIVATE_KEY environment variable appears malformed after processing. It will not be used. Sheet operations may fail.' +
-            `\n  Problem: Did not pass PEM marker (-----BEGIN/END PRIVATE KEY-----) checks.` +
-            `\n  Processed key (after potential quote stripping & newline conversion) starts with: "${key.substring(0, Math.min(30, key.length))}"` +
-            `\n  Processed key ends with: "${key.substring(Math.max(0, key.length - 30))}"` +
-            `\n  Length of this processed key string: ${key.length}` +
-            `\n  Original GOOGLE_PRIVATE_KEY (trimmed, first 30 chars): "${(rawPrivateKeyFromEnv || "").trim().substring(0, Math.min(30, (rawPrivateKeyFromEnv || "").trim().length))}"` +
-            `\n  Hint: Check for missing PEM markers, extra characters, or incorrect newline escaping in your .env.local file for GOOGLE_PRIVATE_KEY.`
+            'GOOGLE_PRIVATE_KEY warning: Malformed structure. Does not start/end with correct PEM markers after processing. ' +
+            'Key starts with (after processing): "' + keyWithNewlines.substring(0, 30) + '". ' +
+            'Key ends with (after processing): "' + keyWithNewlines.substring(Math.max(0, keyWithNewlines.length - 30)) + '". ' +
+            'Original GOOGLE_PRIVATE_KEY (first 30 chars, trimmed): "' + (rawPrivateKeyFromEnv || "").trim().substring(0, 30) + '". ' +
+            'Sheet operations will likely fail.'
         );
         PRIVATE_KEY = undefined;
     }
 } else {
-    // console.warn('GOOGLE_PRIVATE_KEY is not set, empty, or only whitespace in environment variables. PRIVATE_KEY will be undefined.');
+    if (rawPrivateKeyFromEnv === undefined) {
+        // console.log('GOOGLE_PRIVATE_KEY is not set. Sheet operations requiring auth will fail.');
+    } else {
+        console.warn('GOOGLE_PRIVATE_KEY is set but is empty or only whitespace. Sheet operations requiring auth will fail.');
+    }
     PRIVATE_KEY = undefined;
 }
 
@@ -68,15 +80,15 @@ if (rawPrivateKeyFromEnv && rawPrivateKeyFromEnv.trim() !== '') {
   if (!SHEET_ID) missingVarsWarn.push('GOOGLE_SHEET_ID');
   if (!SERVICE_ACCOUNT_EMAIL) missingVarsWarn.push('GOOGLE_SERVICE_ACCOUNT_EMAIL');
   
-  if (!PRIVATE_KEY) { 
-    if (!rawPrivateKeyFromEnv || rawPrivateKeyFromEnv.trim() === '' || rawPrivateKeyFromEnv.trim() === '""' || rawPrivateKeyFromEnv.trim() === "''") {
-      // This case is normal if env vars are not set up yet. Avoid spamming console for this specific state.
-    } else {
-      // This case means rawPrivateKeyFromEnv was set, but PRIVATE_KEY is still undefined,
-      // implying formatting or PEM marker checks failed. The detailed warning above already covered this.
-      missingVarsWarn.push('GOOGLE_PRIVATE_KEY (set but failed formatting/PEM checks - see detailed warning above)');
-    }
+  if (!PRIVATE_KEY && rawPrivateKeyFromEnv && rawPrivateKeyFromEnv.trim() !== '') { 
+    // This case means rawPrivateKeyFromEnv was set, but PRIVATE_KEY is still undefined,
+    // implying formatting or PEM marker checks failed. The detailed warning above already covered this.
+    missingVarsWarn.push('GOOGLE_PRIVATE_KEY (set but failed processing - see detailed warning above)');
+  } else if (!PRIVATE_KEY && (!rawPrivateKeyFromEnv || rawPrivateKeyFromEnv.trim() === '')) {
+    // This means it was not set or was empty.
+     missingVarsWarn.push('GOOGLE_PRIVATE_KEY (not set or empty)');
   }
+
   if (missingVarsWarn.length > 0) {
     console.warn(
       `SheetSync Initialization Warning: One or more Google Sheets API credentials are problematic. Sheet operations are likely to fail. Problematic variables: [${missingVarsWarn.join(', ')}]`
@@ -90,10 +102,11 @@ export async function getSheetsClient(): Promise<sheets_v4.Sheets | null> {
     const errorParts = ['Cannot initialize Sheets client due to missing/invalid credentials:'];
     if (!SHEET_ID) errorParts.push('- GOOGLE_SHEET_ID is not set.');
     if (!SERVICE_ACCOUNT_EMAIL) errorParts.push('- GOOGLE_SERVICE_ACCOUNT_EMAIL is not set.');
+    
     if (!PRIVATE_KEY) {
       if (!rawPrivateKeyFromEnv) errorParts.push('- GOOGLE_PRIVATE_KEY is not set.');
       else if (rawPrivateKeyFromEnv.trim() === '' || rawPrivateKeyFromEnv.trim() === '""' || rawPrivateKeyFromEnv.trim() === "''") errorParts.push('- GOOGLE_PRIVATE_KEY is set but is empty or only whitespace.');
-      else errorParts.push('- GOOGLE_PRIVATE_KEY is set but was malformed or failed structural/PEM checks (see previous warnings).');
+      else errorParts.push('- GOOGLE_PRIVATE_KEY is set but was malformed or failed structural/PEM checks (see previous warnings for details).');
     }
     console.error(errorParts.join('\n  '));
     return null;
@@ -103,17 +116,17 @@ export async function getSheetsClient(): Promise<sheets_v4.Sheets | null> {
     const auth = new google.auth.GoogleAuth({
       credentials: {
         client_email: SERVICE_ACCOUNT_EMAIL,
-        private_key: PRIVATE_KEY,
+        private_key: PRIVATE_KEY, // Should have actual newlines here
       },
       scopes: ['https://www.googleapis.com/auth/spreadsheets'],
     });
 
     return google.sheets({ version: 'v4', auth });
-  } catch (error) {
-    console.error('Error initializing Google Auth client:', error);
-    if (error instanceof Error && (error.message.includes('DECODER routines') || error.message.includes('PEM routines') || error.message.includes('private key') || error.message.includes('asn1 encoding'))) {
+  } catch (error: any) {
+    console.error('Error initializing Google Auth client:', error.message);
+    if (error instanceof Error && (error.message.includes('DECODER routines') || error.message.includes('PEM routines') || error.message.includes('asn1 encoding'))) {
         console.error(
-          'This error during auth initialization often indicates an issue with the GOOGLE_PRIVATE_KEY format or value even after initial checks. Ensure it is a valid PEM-formatted private key. The key might have passed basic structural checks but is still not parsable by the crypto library.'
+          'This error during auth initialization often indicates an issue with the GOOGLE_PRIVATE_KEY format or value even after initial checks. Ensure it is a valid PEM-formatted private key, with actual newlines if copied from a source that used \\n. The key might have passed basic structural checks but is still not parsable by the crypto library.'
         );
     }
     return null;
@@ -123,11 +136,11 @@ export async function getSheetsClient(): Promise<sheets_v4.Sheets | null> {
 export async function getSheetData(): Promise<SheetRow[]> {
   const sheets = await getSheetsClient();
   if (!sheets) {
-     // console.warn('Google Sheets client is not available (possibly due to configuration issues). Returning empty data for dashboard.');
+     console.warn('getSheetData: Google Sheets client is not available (possibly due to configuration issues). Returning empty data.');
      return [];
   }
   if (!SHEET_ID){ 
-    // console.warn('GOOGLE_SHEET_ID is not configured. Returning empty data for dashboard.');
+    console.warn('getSheetData: GOOGLE_SHEET_ID is not configured. Returning empty data.');
     return [];
   }
 
@@ -149,7 +162,7 @@ export async function getSheetData(): Promise<SheetRow[]> {
     const expectedHeaders = ['Donor/Opp', 'Action/Next Step', 'Lead', 'Priority', 'Probability'];
     const missingHeaders = expectedHeaders.filter(eh => !headers.includes(eh));
     if (missingHeaders.length > 0) {
-       // console.warn(`Sheet is missing expected headers: [${missingHeaders.join(', ')}]. Current headers: [${headers.join(', ')}]. Data mapping might be incorrect or incomplete.`);
+       console.warn(`Sheet is missing expected headers: [${missingHeaders.join(', ')}]. Current headers: [${headers.join(', ')}]. Data mapping might be incorrect or incomplete.`);
     }
 
     return dataRows.map((row) => {
@@ -188,16 +201,18 @@ export async function getSheetData(): Promise<SheetRow[]> {
     }).filter(row => Object.values(row).some(val => typeof val === 'string' && val.trim() !== '')); // Filter out completely empty effective rows
 
 
-  } catch (error) {
-    console.error('Error fetching sheet data from Google Sheets API:', error);
-    if (error instanceof Error && error.message.includes('PERMISSION_DENIED')) {
-        console.error(`Permission denied. Ensure the service account (${SERVICE_ACCOUNT_EMAIL}) has at least read access to the Google Sheet (${SHEET_ID}).`);
-    } else if (error instanceof Error && error.message.includes('Requested entity was not found')) {
-        console.error(`Sheet or range not found. Verify GOOGLE_SHEET_ID (${SHEET_ID}) and GOOGLE_SHEET_RANGE (${SHEET_RANGE}).`);
-    } else if (error instanceof Error && (error.message.includes('UNAUTHENTICATED') || error.message.includes('invalid_grant'))) {
-        console.error('Authentication failed. This could be due to an invalid service account email, private key, or incorrect project setup.');
-    } else if (error instanceof Error && (error.message.includes('DECODER routines') || error.message.includes('PEM routines'))) {
-        console.error('A cryptographic error occurred, often related to a malformed private key. Ensure GOOGLE_PRIVATE_KEY is correctly formatted in your environment.');
+  } catch (error: any) {
+    console.error('Error fetching sheet data from Google Sheets API:', error.message);
+    if (error instanceof Error) {
+        if (error.message.includes('PERMISSION_DENIED')) {
+            console.error(`getSheetData Error: Permission denied. Ensure the service account (${SERVICE_ACCOUNT_EMAIL}) has at least read access to the Google Sheet (${SHEET_ID}).`);
+        } else if (error.message.includes('Requested entity was not found')) {
+            console.error(`getSheetData Error: Sheet or range not found. Verify GOOGLE_SHEET_ID (${SHEET_ID}) and GOOGLE_SHEET_RANGE (${SHEET_RANGE}).`);
+        } else if (error.message.includes('UNAUTHENTICATED') || error.message.includes('invalid_grant')) {
+            console.error('getSheetData Error: Authentication failed. This could be due to an invalid service account email, private key, or incorrect project setup.');
+        } else if (error.message.includes('DECODER routines') || error.message.includes('PEM routines')) {
+            console.error('getSheetData Error: A cryptographic error occurred, often related to a malformed private key. Ensure GOOGLE_PRIVATE_KEY is correctly formatted in your environment.');
+        }
     }
     return []; 
   }
@@ -232,16 +247,17 @@ export async function appendSheetRow(rowData: Omit<SheetRow, ''>): Promise<boole
         values: [values],
       },
     });
-    console.log('Row appended successfully to Google Sheet.');
+    // console.log('Row appended successfully to Google Sheet.');
     return true;
-  } catch (error) {
-    console.error('Error appending sheet row to Google Sheets API:', error);
-     if (error instanceof Error && error.message.includes('PERMISSION_DENIED')) {
-        console.error(`Permission denied. Ensure the service account (${SERVICE_ACCOUNT_EMAIL}) has write access to the Google Sheet (${SHEET_ID}).`);
-    } else if (error instanceof Error && (error.message.includes('UNAUTHENTICATED') || error.message.includes('invalid_grant'))) {
-        console.error('Authentication failed while appending. Check service account credentials and permissions.');
-    }
+  } catch (error: any) {
+    console.error('Error appending sheet row to Google Sheets API:', error.message);
+     if (error instanceof Error) {
+        if (error.message.includes('PERMISSION_DENIED')) {
+            console.error(`appendSheetRow Error: Permission denied. Ensure the service account (${SERVICE_ACCOUNT_EMAIL}) has write access to the Google Sheet (${SHEET_ID}).`);
+        } else if (error.message.includes('UNAUTHENTICATED') || error.message.includes('invalid_grant')) {
+            console.error('appendSheetRow Error: Authentication failed while appending. Check service account credentials and permissions.');
+        }
+     }
     return false;
   }
 }
-
