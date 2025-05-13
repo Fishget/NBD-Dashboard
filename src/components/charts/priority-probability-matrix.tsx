@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -60,18 +61,17 @@ export function PriorityProbabilityMatrix({ data, onFilter, currentFilter }: Pri
 
   return (
     <TooltipProvider>
-      {/* Removed fixed height h-[180px] to allow natural sizing */}
-      <div className="grid grid-cols-4 gap-1 w-full"> 
+      <div className="grid grid-cols-4 gap-0.5 w-full max-w-md mx-auto"> 
         <div className="flex items-center justify-center text-xs font-medium text-muted-foreground"></div>
         {probabilities.map(prob => (
-          <div key={`label-prob-${prob}`} className="flex items-center justify-center p-1 text-xs font-medium text-muted-foreground">
+          <div key={`label-prob-${prob}`} className="flex items-center justify-center p-0.5 text-xs font-medium text-muted-foreground">
             {prob}
           </div>
         ))}
 
         {priorities.map(priority => (
           <React.Fragment key={`row-${priority}`}>
-            <div className="flex items-center justify-center p-1 text-xs font-medium text-muted-foreground">
+            <div className="flex items-center justify-center p-0.5 text-xs font-medium text-muted-foreground">
               {priority}
             </div>
             {probabilities.map(probability => {
@@ -85,7 +85,7 @@ export function PriorityProbabilityMatrix({ data, onFilter, currentFilter }: Pri
                     <div
                       onClick={() => onFilter({ priority, probability })}
                       className={cn(
-                        "flex items-center justify-center p-1 border rounded-md cursor-pointer transition-all aspect-square", 
+                        "flex items-center justify-center p-0.5 border rounded-md cursor-pointer transition-all aspect-square", 
                         "hover:ring-2 hover:ring-offset-2 hover:ring-primary",
                         isActive && "ring-2 ring-offset-2 ring-primary shadow-lg",
                       )}
@@ -96,7 +96,7 @@ export function PriorityProbabilityMatrix({ data, onFilter, currentFilter }: Pri
                       data-testid={`matrix-cell-${priority}-${probability}`}
                     >
                       <span className={cn(
-                        "font-bold text-sm", 
+                        "font-bold text-xs", 
                         count > maxCount / 2 ? "text-white" : "text-black" 
                       )}>
                         {count}
