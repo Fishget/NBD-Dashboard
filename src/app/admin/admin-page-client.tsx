@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
@@ -6,7 +7,7 @@ import { SheetConfigForm } from '@/components/sheet-config-form';
 import { LogoutButton } from '@/components/logout-button';
 import { ConnectionTester } from '@/components/connection-tester';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { TestTubeDiagonal, Eye, EyeOff, LayoutGrid, Settings, Table as TableIcon, ChevronDown, ChevronUp, ServerCrash } from 'lucide-react';
+import { TestTubeDiagonal, Eye, EyeOff, LayoutGrid, Settings, Table as TableIcon, ServerCrash } from 'lucide-react';
 import { LoginForm } from '@/components/login-form';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,7 +15,7 @@ import { Separator } from '@/components/ui/separator';
 import { DashboardTable } from '@/components/dashboard-table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getSheetData } from '@/lib/sheets'; // Server action
-import type { SheetRow } from '@/lib/sheets';
+import type { SheetRow } from '@/lib/types'; // Import SheetRow from the new types.ts
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 
@@ -64,10 +65,14 @@ async function AdminDashboardDisplayWrapper() {
   let data: SheetRow[] = [];
   let errorFetchingData = false;
   try {
-    data = await getSheetData(); // getSheetData will return [] on config error
+    // getSheetData should return [] if config is bad or API call fails.
+    // It should not throw an error that crashes this Server Component.
+    data = await getSheetData(); 
   } catch (e: any) {
-    console.error("AdminDashboardDisplayWrapper: Error fetching sheet data:", e.message);
-    errorFetchingData = true; // Indicates an API error, not a config error
+    // This catch block is a fallback, ideally getSheetData handles its own errors.
+    console.error("AdminDashboardDisplayWrapper: Critical error calling getSheetData:", e.message);
+    errorFetchingData = true; 
+    data = []; // Ensure data is an empty array on error
   }
 
   if (errorFetchingData) {
@@ -78,14 +83,14 @@ async function AdminDashboardDisplayWrapper() {
           <div>
             <p className="font-semibold">Error Loading Dashboard Preview</p>
             <p className="text-sm">
-              Could not fetch data from Google Sheets due to an API error. Please check server logs.
+              Could not fetch data from Google Sheets due to an API or configuration error. Please check server logs and connection settings.
             </p>
           </div>
         </div>
       </div>
     );
   }
-  // If data is empty due to config issues, DashboardTable will show "No data available..."
+  // If data is empty due to config issues or no data in sheet, DashboardTable will show "No data available..."
   return <DashboardTable initialData={data} />;
 }
 

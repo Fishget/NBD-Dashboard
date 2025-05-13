@@ -4,7 +4,7 @@
 import * as React from 'react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell } from 'recharts';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import type { SheetRow } from '@/lib/sheets';
+import type { SheetRow } from '@/lib/types'; // Import SheetRow from the new types.ts
 import type { ChartFilterType } from '@/components/dashboard-table';
 
 interface OpportunitiesByLeadChartProps {
@@ -32,6 +32,7 @@ const leadColors = [
 
 export function OpportunitiesByLeadChart({ data, onFilter, currentFilter }: OpportunitiesByLeadChartProps) {
   const leadCounts = React.useMemo(() => {
+    if (!Array.isArray(data)) return [];
     const counts: { [key: string]: number } = {};
     data.forEach(row => {
       if (row.Lead) { // Ensure lead is not empty

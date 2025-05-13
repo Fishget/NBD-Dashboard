@@ -1,16 +1,9 @@
+
 'use server';
 
 import { google } from 'googleapis';
 import type { sheets_v4 } from 'googleapis';
-
-// Define the structure of a row in your sheet
-export interface SheetRow {
-  'Donor/Opp': string;
-  'Action/Next Step': string;
-  Lead: string;
-  Priority: 'High' | 'Medium' | 'Low';
-  Probability: 'High' | 'Medium' | 'Low';
-}
+import type { SheetRow } from './types'; // Import SheetRow from the new types.ts
 
 // Environment variables
 const SHEET_ID = process.env.GOOGLE_SHEET_ID;
@@ -23,7 +16,7 @@ function processPrivateKey(rawKey: string | undefined): string | null {
     console.error('[SheetLib:PK_Process] Raw GOOGLE_PRIVATE_KEY is undefined, empty, or whitespace.');
     return null;
   }
-  console.log('[SheetLib:PK_Process] Received GOOGLE_PRIVATE_KEY. Length:', rawKey.length);
+  // console.log('[SheetLib:PK_Process] Received GOOGLE_PRIVATE_KEY. Length:', rawKey.length);
 
   let key = rawKey;
 
@@ -58,7 +51,7 @@ function processPrivateKey(rawKey: string | undefined): string | null {
       .trim();
 
     if (coreKeyContent.length > 0) {
-      console.log('[SheetLib:PK_Process] SUCCESS: GOOGLE_PRIVATE_KEY processed and structurally validated.');
+      // console.log('[SheetLib:PK_Process] SUCCESS: GOOGLE_PRIVATE_KEY processed and structurally validated.');
       return key;
     } else {
       console.error('[SheetLib:PK_Process] ERROR: GOOGLE_PRIVATE_KEY has PEM markers but NO content in between. This key is invalid.');
@@ -235,7 +228,9 @@ export async function getSheetData(): Promise<SheetRow[]> {
     }
 
     console.error(`[SheetLib:getSheetData] Specific Error Hint: ${specificHint}`);
-    throw new Error(specificHint); // Re-throw API errors to be caught by error boundaries
+    // Return empty array instead of throwing, to allow UI to load gracefully.
+    // The error is logged, and connection test in admin panel can be used for diagnostics.
+    return [];
   }
 }
 
@@ -245,16 +240,26 @@ export async function appendSheetRow(rowData: Omit<SheetRow, ''>): Promise<boole
       sheets = await getSheetsClient();
   } catch (clientError: any) {
       console.error('[SheetLib:appendSheetRow] Error obtaining Google Sheets client in appendSheetRow:', clientError.message);
-      throw new Error(`ConfigurationError: Failed to obtain Google Sheets client instance for appending: ${clientError.message}. Check server logs.`);
+      // throw new Error(`ConfigurationError: Failed to obtain Google Sheets client instance for appending: ${clientError.message}. Check server logs.`);
+      return false; // Indicate failure
   }
 
    if (!sheets) {
       const msg = `ConfigurationError: Google Sheets client not available for appendSheetRow. Check server logs for initialization errors. This usually means credentials in .env.local are missing or invalid.`;
       console.error("[SheetLib:appendSheetRow] " + msg);
-      throw new Error(msg);
+      // throw new Error(msg);
+      return false; // Indicate failure
    }
-   if (!SHEET_ID) { throw new Error("ConfigurationError: GOOGLE_SHEET_ID is not configured for appendSheetRow."); }
-   if (!SHEET_RANGE) { throw new Error("ConfigurationError: GOOGLE_SHEET_RANGE is not configured for appendSheetRow."); }
+   if (!SHEET_ID) { 
+    // throw new Error("ConfigurationError: GOOGLE_SHEET_ID is not configured for appendSheetRow."); 
+    console.error("[SheetLib:appendSheetRow] ConfigurationError: GOOGLE_SHEET_ID is not configured.");
+    return false;
+   }
+   if (!SHEET_RANGE) { 
+    // throw new Error("ConfigurationError: GOOGLE_SHEET_RANGE is not configured for appendSheetRow."); 
+    console.error("[SheetLib:appendSheetRow] ConfigurationError: GOOGLE_SHEET_RANGE is not configured.");
+    return false;
+   }
 
 
   const values = [
@@ -291,6 +296,7 @@ export async function appendSheetRow(rowData: Omit<SheetRow, ''>): Promise<boole
         }
     }
     console.error('[SheetLib:appendSheetRow] Specific Error Hint for append: ' + specificHint);
-    throw new Error(specificHint);
+    // throw new Error(specificHint);
+    return false; // Indicate failure
   }
 }

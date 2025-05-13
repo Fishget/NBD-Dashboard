@@ -4,7 +4,7 @@
 import * as React from 'react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell } from 'recharts';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import type { SheetRow } from '@/lib/sheets';
+import type { SheetRow } from '@/lib/types'; // Import SheetRow from the new types.ts
 import type { ChartFilterType } from '@/components/dashboard-table';
 
 interface OpportunitiesByProbabilityChartProps {
@@ -26,6 +26,7 @@ const chartConfig = {
 
 export function OpportunitiesByProbabilityChart({ data, onFilter, currentFilter }: OpportunitiesByProbabilityChartProps) {
   const probabilityCounts = React.useMemo(() => {
+    if (!Array.isArray(data)) return probabilityOrder.map(prob => ({ name: prob, count: 0 }));
     const counts: { High: number; Medium: number; Low: number } = { High: 0, Medium: 0, Low: 0 };
     data.forEach(row => {
       if (row.Probability && counts[row.Probability] !== undefined) {

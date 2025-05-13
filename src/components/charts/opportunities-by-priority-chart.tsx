@@ -4,7 +4,7 @@
 import * as React from 'react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell } from 'recharts';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import type { SheetRow } from '@/lib/sheets';
+import type { SheetRow } from '@/lib/types'; // Import SheetRow from the new types.ts
 import type { ChartFilterType } from '@/components/dashboard-table';
 
 interface OpportunitiesByPriorityChartProps {
@@ -26,6 +26,7 @@ const chartConfig = {
 
 export function OpportunitiesByPriorityChart({ data, onFilter, currentFilter }: OpportunitiesByPriorityChartProps) {
   const priorityCounts = React.useMemo(() => {
+    if (!Array.isArray(data)) return priorityOrder.map(priority => ({ name: priority, count: 0 }));
     const counts: { High: number; Medium: number; Low: number } = { High: 0, Medium: 0, Low: 0 };
     data.forEach(row => {
       if (row.Priority && counts[row.Priority] !== undefined) {

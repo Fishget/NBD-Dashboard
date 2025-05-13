@@ -1,11 +1,11 @@
+
 'use client'; 
 
 import { Suspense, useState, useEffect } from 'react';
-// import { getSheetData } from '@/lib/sheets'; // Data fetching still commented out
-import type { SheetRow } from '@/lib/sheets'; 
+import type { SheetRow } from '@/lib/types'; // Import SheetRow from the new types.ts
 import { DashboardTable } from '@/components/dashboard-table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AlertTriangle, InfoIcon, ServerCrash } from 'lucide-react'; 
+import { InfoIcon, ServerCrash } from 'lucide-react'; 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 
@@ -49,17 +49,19 @@ function TableSkeleton() {
 // DashboardDataWrapper is a Client Component to manage client-side rendering of DashboardTable
 function DashboardDataWrapper() {
   const [isMounted, setIsMounted] = useState(false);
-  // Data fetching is disabled here for debugging purposes.
-  // tableData will remain empty, allowing the UI to render without external data.
+  // Initialize with empty array. Data fetching from server is currently disabled here
+  // to ensure the basic UI renders without relying on external data calls that might fail.
   const [tableData, setTableData] = useState<SheetRow[]>([]); 
 
   useEffect(() => {
-    console.log("[Page:DashboardDataWrapper CC] Component did mount. Data fetching is currently DISABLED for debugging.");
+    // console.log("[Page:DashboardDataWrapper CC] Component did mount. Data fetching is currently DISABLED.");
     setIsMounted(true);
-    // To re-enable data fetching, you would call a server action here:
+    // To enable actual data fetching from Google Sheets (via a Server Action),
+    // you would uncomment and implement the following:
+    // import { getSheetData } from '@/lib/sheets'; // This import itself is problematic if sheets.ts is not purely server-side for types.
     // async function fetchData() {
     //   try {
-    //     // const data = await getSheetData(); // This is a server action.
+    //     // const data = await getSheetData(); // Call the Server Action
     //     // setTableData(data || []);
     //     // console.log("[Page:DashboardDataWrapper CC] Data fetched (or attempted).");
     //   } catch (error) {
@@ -67,7 +69,7 @@ function DashboardDataWrapper() {
     //     // setTableData([]); // Set empty on error
     //   }
     // }
-    // fetchData(); // Uncomment to attempt fetching data
+    // fetchData(); 
   }, []);
 
   if (!isMounted) {
@@ -88,26 +90,24 @@ function DashboardDataWrapper() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {tableData.length === 0 && (
+        {(tableData === null || tableData.length === 0) && ( // Check for null as well
              <div className="my-4 p-4 border border-dashed border-border rounded-md bg-muted/50">
                 <div className="flex items-center gap-3 text-muted-foreground">
                     <ServerCrash className="h-8 w-8 text-destructive" />
                     <div>
                         <p className="font-semibold text-card-foreground">Data Display Note</p>
                         <p className="text-sm">
-                            Data fetching from Google Sheets is currently dependent on server configuration.
-                            If no data is displayed, please check the Google Sheet connection settings in the Admin panel.
-                        </p>
-                        <p className="text-xs mt-1">
-                            (For developers: `getSheetData` might be returning empty or actual fetching is disabled in `DashboardDataWrapper` for debugging.)
+                            The dashboard is currently displaying with no data or sample data.
+                            Full data fetching from Google Sheets is dependent on server configuration and might be disabled for debugging.
+                            If you expect to see live data, please ensure the Google Sheet connection is correctly set up in the Admin panel and that data fetching is enabled in the code.
                         </p>
                     </div>
                 </div>
             </div>
         )}
          <div className="mt-6">
-            {/* DashboardTable will show "No data available" if tableData is empty */}
-            <DashboardTable initialData={tableData} />
+            {/* Pass an empty array if tableData is null to prevent errors in DashboardTable */}
+            <DashboardTable initialData={tableData || []} /> 
         </div>
       </CardContent>
     </Card>
@@ -129,4 +129,7 @@ export default function Home() {
   );
 }
 
+// Using force-dynamic to ensure the page is re-evaluated on each request,
+// which can be helpful if underlying data changes frequently.
+// However, for diagnosing black screen issues, this is less critical than client-side errors.
 export const dynamic = 'force-dynamic';

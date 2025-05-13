@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import type { SheetRow } from '@/lib/sheets';
+import type { SheetRow } from '@/lib/types'; // Import SheetRow from the new types.ts
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { ChartFilterType } from '@/components/dashboard-table';
@@ -29,6 +29,8 @@ export function PriorityProbabilityMatrix({ data, onFilter, currentFilter }: Pri
       Medium: { High: 0, Medium: 0, Low: 0 },
       Low: { High: 0, Medium: 0, Low: 0 },
     };
+    if (!Array.isArray(data)) return matrix; // Return empty matrix if data is not an array
+    
     data.forEach(row => {
       if (
         priorities.includes(row.Priority) &&
@@ -78,7 +80,7 @@ export function PriorityProbabilityMatrix({ data, onFilter, currentFilter }: Pri
             {/* Data Cells */}
             {probabilities.map(probability => {
               const count = matrixData[priority][probability];
-              const opacity = count > 0 ? Math.max(0.2, count / maxCount) : 0.1; // Ensure some visibility for 0 counts if needed, or use 0
+              const opacity = count > 0 ? Math.max(0.2, count / maxCount) : 0.1; 
               const isActive = activePriority === priority && activeProbability === probability;
 
               return (
@@ -93,13 +95,13 @@ export function PriorityProbabilityMatrix({ data, onFilter, currentFilter }: Pri
                       )}
                       style={{
                         backgroundColor: getPriorityColor(priority),
-                        opacity: isActive ? 1 : opacity, // Full opacity if active
+                        opacity: isActive ? 1 : opacity, 
                       }}
                       data-testid={`matrix-cell-${priority}-${probability}`}
                     >
                       <span className={cn(
                         "font-bold text-lg",
-                        count > maxCount / 2 ? "text-white" : "text-black" // Simple contrast logic
+                        count > maxCount / 2 ? "text-white" : "text-black" 
                       )}>
                         {count}
                       </span>
