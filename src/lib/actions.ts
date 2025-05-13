@@ -1,4 +1,3 @@
-
 'use server';
 
 import { z } from 'zod';
@@ -87,7 +86,8 @@ export async function submitDataAction(
 
     if (success) {
       revalidatePath('/'); // Revalidate the homepage cache to show the new data
-      revalidatePath('/admin'); // Also revalidate admin page, in case any part of it depends on sheet data or for general refresh
+      // revalidatePath('/admin'); // Commented out: Also revalidate admin page, this might be causing logout issues.
+      // The dashboard on the admin page might not update immediately, but this should prevent logout.
       return { message: 'Data submitted successfully!', success: true };
     } else {
       return { message: 'Failed to submit data to Google Sheet. Please check the server console logs for more specific error details from the Google Sheets API.', success: false };
@@ -122,23 +122,28 @@ export async function saveSheetConfigAction(
 
     const configData: SheetConfigFormData = parsed.data;
 
-    console.log('Received valid sheet configuration data (validation only):', {
+    // This action now primarily serves to validate the format and generate the .env.local preview.
+    // It does not save anything persistently on the server itself.
+    // The user is responsible for updating .env.local and restarting.
+    console.log('Received valid sheet configuration data for .env.local preview generation:', {
         sheetId: configData.sheetId,
         sheetRange: configData.sheetRange,
         serviceAccountEmail: configData.serviceAccountEmail,
-        privateKey: '[REDACTED]', 
+        privateKey: '[REDACTED - validated but not stored by this action]', 
     });
     
-    revalidatePath('/admin'); // Revalidate admin to reflect any UI changes potentially related to config.
+    // Revalidate admin to reflect any UI changes potentially related to config form state,
+    // but the actual server config relies on env vars restart.
+    revalidatePath('/admin'); 
 
     return {
-        message: 'Configuration validated successfully. Remember to update environment variables and restart/redeploy the server for these changes to be used by the application backend.',
+        message: 'Configuration format validated successfully. The preview for .env.local has been generated. Copy the content into your .env.local file and restart/redeploy the server for these settings to be used by the application backend.',
         success: true
     };
 
   } catch (error) {
     console.error('Save sheet config error:', error);
-    return { message: 'An unexpected error occurred while validating the configuration.', success: false };
+    return { message: 'An unexpected error occurred while validating the configuration for preview.', success: false };
   }
 }
 
@@ -164,7 +169,7 @@ export async function testSheetConnectionAction(
     return {
       success: false,
       message: 'Connection test failed: Could not initialize Google Sheets client.',
-      details: 'This usually indicates an issue with the service account credentials (email or private key format/value) or their parsing. Check server logs for more specific errors related to Google Auth initialization. Ensure GOOGLE_PRIVATE_KEY is correctly formatted and not empty.',
+      details: 'This usually indicates an issue with the service account credentials (email or private key format/value) or their parsing. Check server logs for more specific errors related to Google Auth initialization. Ensure GOOGLE_PRIVATE_KEY is correctly formatted and not empty or malformed (e.g. missing PEM markers, incorrect newline escaping).',
     };
   }
 
