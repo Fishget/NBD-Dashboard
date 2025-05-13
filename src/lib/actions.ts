@@ -91,7 +91,7 @@ export async function submitDataAction(
       revalidatePath('/');
       return { message: 'Data submitted successfully!', success: true };
     } else {
-      return { message: 'Failed to submit data to Google Sheet.', success: false };
+      return { message: 'Failed to submit data to Google Sheet. Please check the server console logs for more specific error details from the Google Sheets API.', success: false };
     }
   } catch (error) {
     console.error('Submit data error:', error);
