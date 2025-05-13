@@ -1,9 +1,10 @@
+
 import { Suspense } from 'react';
 import { getSheetData, type SheetRow } from '@/lib/sheets';
 import { DashboardTable } from '@/components/dashboard-table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AlertTriangle, InfoIcon } from 'lucide-react'; // Added InfoIcon
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { AlertTriangle, InfoIcon, ServerCrash } from 'lucide-react'; // Added ServerCrash
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 
 // Helper component for loading skeleton
@@ -45,10 +46,8 @@ function TableSkeleton() {
 
 // Data fetching component wrapped for Suspense
 async function DashboardData() {
-  let data: SheetRow[] = [];
-  let errorOccurred = false;
-  let errorMessage = 'An unknown error occurred while fetching data.';
-  let errorDetails = ''; // To store more specific details for display
+  let data: SheetRow[] | null = null; // Allow null to explicitly track fetch state
+  let errorObject: { message: string; details?: string } | null = null;
 
   // Check for essential env variables for a more specific initial error message
   const isConfigSufficient = 
@@ -56,74 +55,107 @@ async function DashboardData() {
     process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL &&
     process.env.GOOGLE_PRIVATE_KEY &&
     process.env.GOOGLE_PRIVATE_KEY.trim() !== '' &&
-    process.env.GOOGLE_PRIVATE_KEY.trim() !== '""' && // handle empty string in quotes
+    process.env.GOOGLE_PRIVATE_KEY.trim() !== '""' && 
     process.env.GOOGLE_PRIVATE_KEY.trim() !== "''";
 
-
   if (!isConfigSufficient) {
-    errorOccurred = true;
-    errorMessage = "Google Sheets API is not configured.";
-    errorDetails = "The application is missing necessary Google Sheets API credentials (Sheet ID, Service Account Email, Private Key) in its server environment. Please ensure these are set, for example, in your .env.local file and that the server has been restarted. Check server logs for more specific details on which variable is missing or malformed (look for '[SheetLib:getSheetsClient]' logs).";
+    errorObject = {
+      message: "Google Sheets API is not configured correctly on the server.",
+      details: "One or more essential environment variables (GOOGLE_SHEET_ID, GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY) are missing or invalid. Please ensure these are set correctly (e.g., in your .env.local file or hosting provider settings) and the server has been restarted. The private key, if set, must not be an empty or placeholder string."
+    };
   } else {
     try {
-      // console.log("Home page: Attempting to fetch dashboard data...");
-      data = await getSheetData(); // This will now throw on critical errors
-      // console.log(`Home page: Successfully fetched ${data.length} rows.`);
+      console.log("Home page: Attempting to fetch dashboard data via getSheetData()...");
+      data = await getSheetData(); 
+      console.log(`Home page: Successfully fetched ${data?.length ?? 'N/A'} rows.`);
+      if (!Array.isArray(data)) {
+        console.error("Home page: getSheetData() did not return an array. This is unexpected. Data received:", data);
+        throw new Error("Received invalid data format from the data source.");
+      }
     } catch (error: any) {
-      errorOccurred = true;
-      errorMessage = error.message || 'An unexpected error occurred while fetching data from Google Sheets.';
-      // errorDetails = error.stack || 'No stack trace available.';
-      // The error.message from getSheetData is now more specific.
-      errorDetails = `Error details from getSheetData: ${error.message}${error.stack ? `\nStack: ${error.stack}` : ''}`;
-      console.error("Home page: CRITICAL error during getSheetData call:", error);
+      console.error("Home page: CRITICAL error during getSheetData() call:", error);
+      errorObject = {
+        message: error.message || 'An unexpected error occurred while fetching data from Google Sheets.',
+        details: error.stack || 'No stack trace available.'
+      };
+      if (error.message?.includes("ConfigurationError")) { // Specific error from our sheets.ts
+         errorObject.details = `${error.message}. This usually means GOOGLE_SHEET_ID, GOOGLE_SERVICE_ACCOUNT_EMAIL, or GOOGLE_PRIVATE_KEY is missing, malformed, or the service account doesn't have permissions. Check server logs for more specific messages starting with '[SheetLib]' or '[SheetLib:getSheetsClient]'.`;
+      } else if (error.message?.includes("Failed to initialize Google Sheets client")) {
+         errorObject.details = `${error.message}. This indicates a problem during the Google Auth library initialization, often due to a malformed private key or incorrect service account email. Check server logs for '[SheetLib:getSheetsClient]' errors.`;
+      }
     }
   }
 
-
-  if (errorOccurred) {
+  if (errorObject) {
     return (
-      <Card className="border-destructive">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-destructive">
-            <AlertTriangle />
-            Error Loading Dashboard Data
+      <Card className="border-destructive shadow-xl my-8">
+        <CardHeader className="bg-destructive text-destructive-foreground">
+          <CardTitle className="flex items-center gap-3 text-2xl">
+            <ServerCrash className="h-8 w-8" />
+            Dashboard Unavailable
           </CardTitle>
+           <CardDescription className="text-destructive-foreground/90">
+            Failed to load data from Google Sheets.
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          <p className="font-semibold">{errorMessage}</p>
-          {errorDetails && (
+        <CardContent className="pt-6 space-y-3">
+          <p className="font-semibold text-lg text-card-foreground">{errorObject.message}</p>
+          {errorObject.details && (
             <div className="mt-2 p-3 bg-muted rounded-md border border-destructive/30">
               <p className="text-sm text-card-foreground font-medium mb-1">Technical Details:</p>
-              <pre className="text-xs whitespace-pre-wrap break-all text-muted-foreground">{errorDetails}</pre>
+              <pre className="text-xs whitespace-pre-wrap break-all text-muted-foreground">{errorObject.details}</pre>
             </div>
           )}
           <p className="text-sm text-muted-foreground mt-4">
-            Please check the server logs for more specific error messages related to Google Sheets API connectivity or authentication (look for "[SheetLib]" logs).
-            Common issues include incorrect API credentials (GOOGLE_SHEET_ID, GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY format), or the service account not having permissions for the sheet.
-             If you've recently updated environment variables, ensure you've restarted the server.
+            <strong>Troubleshooting Steps:</strong>
+            <ul className="list-disc list-inside mt-1 space-y-1">
+              <li>Verify that `GOOGLE_SHEET_ID`, `GOOGLE_SERVICE_ACCOUNT_EMAIL`, and `GOOGLE_PRIVATE_KEY` are correctly set in your server environment (e.g., `.env.local` file for development).</li>
+              <li>Ensure the `GOOGLE_PRIVATE_KEY` is the complete, correctly formatted PEM key string.</li>
+              <li>Confirm the service account has appropriate permissions (at least 'Viewer') for the Google Sheet.</li>
+              <li>If you recently updated environment variables, restart your server.</li>
+              <li>Check your server's console logs for more specific error messages, especially those prefixed with `[SheetLib]` or relating to Google API calls.</li>
+            </ul>
           </p>
         </CardContent>
       </Card>
     );
   }
   
-  // If config is present, but data is empty, it might be an empty sheet
-  if (data.length === 0 && isConfigSufficient) {
+  if (data === null) {
+    // This case should ideally be caught by the errorObject block if fetching failed.
+    // If data is null but no errorObject, it's an unexpected state.
+    return (
+        <Card className="border-destructive shadow-xl my-8">
+             <CardHeader className="bg-destructive text-destructive-foreground">
+                <CardTitle className="flex items-center gap-3 text-2xl">
+                    <ServerCrash className="h-8 w-8" />
+                    Unexpected State
+                </CardTitle>
+             </CardHeader>
+            <CardContent className="pt-6">
+                <p>The dashboard data could not be prepared, and no specific error was reported. This is an unexpected situation. Please check server logs.</p>
+            </CardContent>
+        </Card>
+    );
+  }
+  
+  if (data.length === 0 && isConfigSufficient) { // data is confirmed to be an array here
      return (
-        <Card>
+        <Card className="my-8 shadow-md">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-primary">
-                    <InfoIcon className="h-5 w-5" />
+                    <InfoIcon className="h-6 w-6" />
                     No Data Found
                 </CardTitle>
             </CardHeader>
             <CardContent>
-                <p>The Google Sheet appears to be empty or no data matches the expected format in the specified range.</p>
-                <p className="text-sm text-muted-foreground mt-2">
+                <p className="text-lg">The Google Sheet appears to be empty or no data matches the expected format in the specified range.</p>
+                <p className="text-sm text-muted-foreground mt-3">
                     Please ensure your sheet (ID: <code className="font-mono bg-muted px-1 py-0.5 rounded">{process.env.GOOGLE_SHEET_ID}</code>, 
                     Range: <code className="font-mono bg-muted px-1 py-0.5 rounded">{process.env.GOOGLE_SHEET_RANGE || 'Sheet1!A:E'}</code>) 
-                    contains data with the required headers: Donor/Opp, Action/Next Step, Lead, Priority, Probability.
+                    contains data with the required headers: <code className="font-mono bg-muted px-1 py-0.5 rounded">Donor/Opp</code>, <code className="font-mono bg-muted px-1 py-0.5 rounded">Action/Next Step</code>, <code className="font-mono bg-muted px-1 py-0.5 rounded">Lead</code>, <code className="font-mono bg-muted px-1 py-0.5 rounded">Priority</code>, <code className="font-mono bg-muted px-1 py-0.5 rounded">Probability</code>.
                 </p>
+                 <p className="text-sm text-muted-foreground mt-2">If you have data, ensure it starts from the second row (assuming the first row is headers) and that the sheet name in your `GOOGLE_SHEET_RANGE` environment variable is correct.</p>
             </CardContent>
         </Card>
      );
@@ -146,7 +178,7 @@ export default function Home() {
   );
 }
 
-// Ensure dynamic rendering as data comes from an external source and to reflect any auth changes.
+// Ensure dynamic rendering as data comes from an external source.
 export const dynamic = 'force-dynamic';
-// Optional: Revalidate cache periodically if data changes frequently and force-dynamic isn't sufficient.
-// export const revalidate = 60; 
+
+    
