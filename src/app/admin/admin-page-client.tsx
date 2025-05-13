@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { cn } from '@/lib/utils';
 
 interface AdminPageClientProps {
   initialLoggedIn: boolean;
@@ -63,6 +64,7 @@ export default function AdminPageClient({ initialLoggedIn, dashboardDisplaySlot 
   const [loggedIn, setLoggedIn] = useState(initialLoggedIn);
   const [isConnectionVerified, setIsConnectionVerified] = useState(false);
   const [showConfigFormOverride, setShowConfigFormOverride] = useState(false);
+  const [isDashboardRefreshing, setIsDashboardRefreshing] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -82,8 +84,13 @@ export default function AdminPageClient({ initialLoggedIn, dashboardDisplaySlot 
     setShowConfigFormOverride(prev => !prev);
   }
 
-  const handleRefreshDashboard = () => {
+  const handleRefreshDashboard = async () => {
+    if (isDashboardRefreshing) return;
+    setIsDashboardRefreshing(true);
     router.refresh();
+    // Simulate refresh duration for visual feedback, adjust or remove as needed
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setIsDashboardRefreshing(false);
   };
 
   const displayConfigForm = !isConnectionVerified || showConfigFormOverride;
@@ -135,12 +142,11 @@ export default function AdminPageClient({ initialLoggedIn, dashboardDisplaySlot 
                     <CardHeader>
                         <div className="flex justify-between items-center">
                            <CardTitle>Live Dashboard Preview</CardTitle>
-                           <Button variant="outline" size="sm" onClick={handleRefreshDashboard}>
-                               <RefreshCw className="mr-2 h-4 w-4" />
-                               Refresh
+                           <Button variant="outline" size="sm" onClick={handleRefreshDashboard} disabled={isDashboardRefreshing}>
+                               <RefreshCw className={cn("mr-2 h-4 w-4", isDashboardRefreshing && "animate-spin-slow")} />
+                               {isDashboardRefreshing ? 'Refreshing...' : 'Refresh'}
                            </Button>
                         </div>
-                        {/* Removed the specific CardDescription text as per request */}
                         <CardDescription className="flex items-start gap-2 pt-2">
                            <InfoIcon className="h-5 w-5 text-primary mt-0.5 shrink-0" />
                            <span>
