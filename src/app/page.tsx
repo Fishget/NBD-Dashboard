@@ -1,7 +1,7 @@
 'use client'; 
 
 import { Suspense, useState, useEffect } from 'react';
-import type { SheetRow } from '@/lib/types'; // Import SheetRow from the new types.ts
+import type { SheetRow } from '../lib/types'; // Changed from @/lib/types
 import { DashboardTable } from '@/components/dashboard-table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { InfoIcon, ServerCrash } from 'lucide-react'; 

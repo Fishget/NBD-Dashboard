@@ -14,7 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { DashboardTable } from '@/components/dashboard-table';
 import { Skeleton } from '@/components/ui/skeleton';
 // import { getSheetData } from '@/lib/sheets'; // Server action - Commented out to "disconnect"
-import type { SheetRow } from '@/lib/types'; // Import SheetRow from the new types.ts
+import type { SheetRow } from '../../lib/types'; // Changed from @/lib/types
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 

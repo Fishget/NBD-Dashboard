@@ -1,10 +1,9 @@
-
 'use client';
 
 import * as React from 'react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell } from 'recharts';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import type { SheetRow } from '@/lib/types'; // Import SheetRow from the new types.ts
+import type { SheetRow } from '../../../lib/types'; // Changed from @/lib/types
 import type { ChartFilterType } from '@/components/dashboard-table';
 
 interface OpportunitiesByProbabilityChartProps {

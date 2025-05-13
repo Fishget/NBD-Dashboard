@@ -1,8 +1,7 @@
-
 'use client';
 
 import * as React from 'react';
-import type { SheetRow } from '@/lib/types'; // Import SheetRow from the new types.ts
+import type { SheetRow } from '../../../lib/types'; // Changed from @/lib/types
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { ChartFilterType } from '@/components/dashboard-table';

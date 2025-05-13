@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -14,7 +13,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ArrowUpDown, ChevronLeft, ChevronRight, BarChart2, Eye, EyeOff, FilterX } from 'lucide-react';
-import type { SheetRow } from '@/lib/types'; // Import SheetRow from the new types.ts
+import type { SheetRow } from '../../lib/types'; // Changed from @/lib/types
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 // import { OpportunitiesByLeadChart } from '@/components/charts/opportunities-by-lead-chart'; Removed
