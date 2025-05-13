@@ -1,4 +1,3 @@
-
 'use server';
 
 import { z } from 'zod';
@@ -86,7 +85,7 @@ export async function submitDataAction(
     const success = await appendSheetRow(dataToAppend);
 
     if (success) {
-      revalidatePath('/admin'); // Revalidate admin to refresh dashboard preview
+      // Removed revalidatePath('/admin'); It will be handled client-side to prevent potential logout issues.
       revalidatePath('/'); // Revalidate public dashboard
       return {
         message: 'Data submitted successfully!',

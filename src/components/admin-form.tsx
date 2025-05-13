@@ -1,8 +1,7 @@
-
 'use client';
 
-import { useActionState } from 'react'; // Correct import for useActionState
-import { useFormStatus } from 'react-dom'; // Correct import for useFormStatus
+import { useActionState } from 'react'; 
+import { useFormStatus } from 'react-dom'; 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { submitDataAction, type FormState } from '@/lib/actions';
@@ -11,9 +10,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
 import { useEffect } from 'react';
@@ -28,7 +27,11 @@ function SubmitButton() {
   );
 }
 
-export function AdminForm() {
+interface AdminFormProps {
+  onSuccessfulSubmit?: () => void;
+}
+
+export function AdminForm({ onSuccessfulSubmit }: AdminFormProps) {
   const [state, formAction] = useActionState<FormState | null, FormData>(submitDataAction, null);
   const { toast } = useToast();
 
@@ -38,12 +41,11 @@ export function AdminForm() {
       'Donor/Opp': '',
       'Action/Next Step': '',
       Lead: '',
-      Priority: undefined, // Let placeholder show
+      Priority: undefined, 
       Probability: undefined,
     },
   });
 
-  // Display toast message on state change and reset form on success
   useEffect(() => {
     if (state?.message) {
       toast({
@@ -52,16 +54,16 @@ export function AdminForm() {
         variant: state.success ? 'default' : 'destructive',
       });
       if (state.success) {
-        form.reset(); // Clear form fields on successful submission
+        form.reset(); 
+        onSuccessfulSubmit?.(); // Call the success callback
       }
     }
-  }, [state, toast, form]);
+  }, [state, toast, form, onSuccessfulSubmit]);
 
   return (
     <Card className="w-full max-w-2xl border-0 shadow-none">
-       {/* Display general error message if not success and no field-specific errors */}
         {!state?.success && state?.message && !state.errors && (
-             <CardContent className="pt-0"> {/* Adjust padding if header is removed */}
+             <CardContent className="pt-0"> 
                  <Alert variant="destructive">
                    <Terminal className="h-4 w-4" />
                    <AlertTitle>Submission Failed</AlertTitle>
@@ -71,7 +73,7 @@ export function AdminForm() {
         )}
       <Form {...form}>
         <form action={formAction}>
-          <CardContent className="space-y-4 pt-0"> {/* Adjust padding if header is removed */}
+          <CardContent className="space-y-4 pt-0"> 
              <FormField
                 control={form.control}
                 name="Donor/Opp"
@@ -134,7 +136,7 @@ export function AdminForm() {
                         onValueChange={field.onChange}
                         defaultValue={field.value}
                         value={field.value}
-                        name={field.name} // Ensure name attribute is passed for FormData
+                        name={field.name} 
                     >
                         <FormControl>
                         <SelectTrigger>
@@ -165,7 +167,7 @@ export function AdminForm() {
                         onValueChange={field.onChange}
                         defaultValue={field.value}
                         value={field.value}
-                        name={field.name} // Ensure name attribute is passed for FormData
+                        name={field.name} 
                     >
                         <FormControl>
                         <SelectTrigger>
@@ -188,7 +190,7 @@ export function AdminForm() {
              </div>
 
           </CardContent>
-          <CardFooter className="flex justify-end pt-0"> {/* Adjust padding if header is removed */}
+          <CardFooter className="flex justify-end pt-0"> 
             <SubmitButton />
           </CardFooter>
         </form>

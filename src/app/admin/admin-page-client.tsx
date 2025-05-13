@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
@@ -9,7 +8,7 @@ import { SheetConfigForm } from '@/components/sheet-config-form';
 import { LogoutButton } from '@/components/logout-button';
 import { ConnectionTester } from '@/components/connection-tester';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { TestTubeDiagonal, Eye, EyeOff, LayoutGrid, Settings, Table as TableIcon, InfoIcon, RefreshCw } from 'lucide-react';
+import { TestTubeDiagonal, Eye, EyeOff, LayoutGrid, Settings, Table as TableIcon, InfoIcon, RefreshCw, LogOut } from 'lucide-react';
 import { LoginForm } from '@/components/login-form';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,6 +16,8 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { cn } from '@/lib/utils';
+import { logoutAction } from '@/lib/actions';
+
 
 interface AdminPageClientProps {
   initialLoggedIn: boolean;
@@ -78,6 +79,7 @@ export default function AdminPageClient({ initialLoggedIn, dashboardDisplaySlot 
   const handleConnectionSuccess = () => {
     setIsConnectionVerified(true);
     setShowConfigFormOverride(false);
+    router.refresh(); // Refresh to potentially hide config form if connection becomes verified
   };
 
   const toggleShowConfigForm = () => {
@@ -88,10 +90,15 @@ export default function AdminPageClient({ initialLoggedIn, dashboardDisplaySlot 
     if (isDashboardRefreshing) return;
     setIsDashboardRefreshing(true);
     router.refresh();
-    // Simulate refresh duration for visual feedback, adjust or remove as needed
     await new Promise(resolve => setTimeout(resolve, 1000));
     setIsDashboardRefreshing(false);
   };
+
+  const handleClientLogout = () => {
+    setLoggedIn(false);
+    // Additional client-side cleanup if necessary
+  };
+
 
   const displayConfigForm = !isConnectionVerified || showConfigFormOverride;
 
@@ -103,7 +110,16 @@ export default function AdminPageClient({ initialLoggedIn, dashboardDisplaySlot 
     <div className="space-y-8">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Admin Login</h1>
-        <LogoutButton />
+        <form action={async () => {
+          await logoutAction(); // Server action
+          handleClientLogout(); // Update client state
+          // router.refresh(); // Let Next.js handle redirection/refresh based on auth state
+        }}>
+          <Button type="submit" variant="outline" size="sm">
+            <LogOut className="mr-2 h-4 w-4" />
+            Logout
+          </Button>
+        </form>
       </div>
 
       <Tabs defaultValue="data-entry" className="w-full">
@@ -120,12 +136,9 @@ export default function AdminPageClient({ initialLoggedIn, dashboardDisplaySlot 
 
         <TabsContent value="data-entry" className="mt-6 space-y-8">
           <Card>
-            <CardHeader>
-              <CardTitle>Add New Entry</CardTitle>
-              <CardDescription>Add new entries to the Google Sheet.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <AdminForm />
+            {/* Removed CardHeader and CardDescription for "Add New Entry" */}
+            <CardContent className="pt-6"> {/* Added pt-6 since header is removed */}
+              <AdminForm onSuccessfulSubmit={handleRefreshDashboard} />
             </CardContent>
           </Card>
 
@@ -147,12 +160,14 @@ export default function AdminPageClient({ initialLoggedIn, dashboardDisplaySlot 
                                {isDashboardRefreshing ? 'Refreshing...' : 'Refresh'}
                            </Button>
                         </div>
+                        {/* Removed the CardDescription for dashboard preview
                         <CardDescription className="flex items-start gap-2 pt-2">
                            <InfoIcon className="h-5 w-5 text-primary mt-0.5 shrink-0" />
                            <span>
                              This is a read-only preview of the current data. Configuration errors might affect display.
                            </span>
                         </CardDescription>
+                        */}
                     </CardHeader>
                     <CardContent>
                         <Suspense fallback={<AdminTableSkeleton />}>
