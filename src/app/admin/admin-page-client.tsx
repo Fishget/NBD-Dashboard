@@ -6,7 +6,7 @@ import { SheetConfigForm } from '@/components/sheet-config-form';
 import { LogoutButton } from '@/components/logout-button';
 import { ConnectionTester } from '@/components/connection-tester';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { TestTubeDiagonal, Eye, EyeOff, LayoutGrid, Settings, Table as TableIcon, ChevronDown, ChevronUp } from 'lucide-react';
+import { TestTubeDiagonal, Eye, EyeOff, LayoutGrid, Settings, Table as TableIcon, ChevronDown, ChevronUp, ServerCrash } from 'lucide-react';
 import { LoginForm } from '@/components/login-form';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,6 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { DashboardTable } from '@/components/dashboard-table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getSheetData } from '@/lib/sheets'; // Server action
+import type { SheetRow } from '@/lib/sheets';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 
@@ -58,12 +59,33 @@ function AdminTableSkeleton() {
   );
 }
 
-// This component fetches data on the server and passes it to DashboardTable
-// It must be an async Server Component or be called from one.
-// Here, we'll assume it's intended to be part of the server-rendered output
-// when the admin page loads, so it's okay for it to be async.
+
 async function AdminDashboardDisplayWrapper() {
-  const data = await getSheetData();
+  let data: SheetRow[] = [];
+  let errorFetchingData = false;
+  try {
+    data = await getSheetData(); // getSheetData will return [] on config error
+  } catch (e: any) {
+    console.error("AdminDashboardDisplayWrapper: Error fetching sheet data:", e.message);
+    errorFetchingData = true; // Indicates an API error, not a config error
+  }
+
+  if (errorFetchingData) {
+    return (
+      <div className="my-4 p-4 border border-destructive rounded-md bg-destructive/10">
+        <div className="flex items-center gap-3 text-destructive">
+          <ServerCrash className="h-8 w-8" />
+          <div>
+            <p className="font-semibold">Error Loading Dashboard Preview</p>
+            <p className="text-sm">
+              Could not fetch data from Google Sheets due to an API error. Please check server logs.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  // If data is empty due to config issues, DashboardTable will show "No data available..."
   return <DashboardTable initialData={data} />;
 }
 
@@ -126,7 +148,7 @@ export default function AdminPageClient({ initialLoggedIn }: AdminPageClientProp
             </CardContent>
           </Card>
           
-          <Accordion type="single" collapsible className="w-full">
+          <Accordion type="single" collapsible className="w-full" defaultValue="dashboard-preview">
             <AccordionItem value="dashboard-preview">
               <AccordionTrigger>
                 <div className="flex items-center gap-2 text-lg font-semibold">
@@ -138,11 +160,10 @@ export default function AdminPageClient({ initialLoggedIn }: AdminPageClientProp
                 <Card>
                     <CardHeader>
                         <CardTitle>Live Dashboard Preview</CardTitle>
-                        <CardDescription>View the current data from the Google Sheet. This is a read-only preview.</CardDescription>
+                        <CardDescription>View the current data from the Google Sheet. This is a read-only preview. If data is not shown, check connection settings.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Suspense fallback={<AdminTableSkeleton />}>
-                            {/* AdminDashboardDisplayWrapper is an async component, it's fine here inside Suspense */}
                             <AdminDashboardDisplayWrapper />
                         </Suspense>
                     </CardContent>

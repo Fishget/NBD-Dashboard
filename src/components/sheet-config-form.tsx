@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useActionState, useEffect, useState, useMemo } from 'react'; // Correct import for useActionState, added useMemo
-import { useFormStatus } from 'react-dom'; // Correct import for useFormStatus
+import React, { useActionState, useEffect, useState, useMemo } from 'react'; 
+import { useFormStatus } from 'react-dom'; 
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { saveSheetConfigAction, type FormState } from '@/lib/actions';
@@ -26,10 +26,10 @@ function SubmitButton() {
 
 export function SheetConfigForm() {
   const memoizedDefaultValues = useMemo<SheetConfigFormData>(() => ({
-    sheetId: process.env.NEXT_PUBLIC_GOOGLE_SHEET_ID_DEFAULT || '',
-    sheetRange: process.env.NEXT_PUBLIC_GOOGLE_SHEET_RANGE_DEFAULT || 'Sheet1!A:E',
-    serviceAccountEmail: process.env.NEXT_PUBLIC_GOOGLE_SERVICE_ACCOUNT_EMAIL_DEFAULT || '',
-    privateKey: process.env.NEXT_PUBLIC_GOOGLE_PRIVATE_KEY_DEFAULT || '',
+    sheetId: typeof window !== "undefined" ? process.env.NEXT_PUBLIC_GOOGLE_SHEET_ID_DEFAULT || '' : '',
+    sheetRange: typeof window !== "undefined" ? process.env.NEXT_PUBLIC_GOOGLE_SHEET_RANGE_DEFAULT || 'Sheet1!A:E' : 'Sheet1!A:E',
+    serviceAccountEmail: typeof window !== "undefined" ? process.env.NEXT_PUBLIC_GOOGLE_SERVICE_ACCOUNT_EMAIL_DEFAULT || '' : '',
+    privateKey: typeof window !== "undefined" ? process.env.NEXT_PUBLIC_GOOGLE_PRIVATE_KEY_DEFAULT || '' : '',
   }), []);
 
 
@@ -45,25 +45,36 @@ export function SheetConfigForm() {
   const watchedValues = useWatch({ control: form.control });
 
   useEffect(() => {
-    const { sheetId, sheetRange, serviceAccountEmail, privateKey: formPrivateKey } = watchedValues || {};
+    const { sheetId, sheetRange, serviceAccountEmail, privateKey: formPrivateKeyInput } = watchedValues || {};
 
     let envFormattedPrivateKey: string;
-    const currentPrivateKey = typeof formPrivateKey === 'string' ? formPrivateKey : '';
+    const currentPrivateKeyInput = typeof formPrivateKeyInput === 'string' ? formPrivateKeyInput : '';
 
 
-    if (currentPrivateKey.trim()) {
-      // Format the key for .env: replace actual newlines with literal '\n' and wrap in quotes
-      const escapedKey = currentPrivateKey
-        .trim() // Trim leading/trailing whitespace from the key block itself
-        .replace(/\r\n/g, '\n') // Normalize Windows newlines
-        .replace(/\n/g, '\\n'); // Escape newlines for .env string
-      envFormattedPrivateKey = `"${escapedKey}"`;
+    if (currentPrivateKeyInput.trim()) {
+      // Process the key for .env format
+      let key = currentPrivateKeyInput.trim();
+
+      // Remove surrounding quotes IF they encapsulate the ENTIRE string.
+      if ((key.startsWith('"') && key.endsWith('"')) || (key.startsWith("'") && key.endsWith("'"))) {
+        key = key.substring(1, key.length - 1);
+      }
+      
+      // Unescape literal "\\r\\n" and "\\n" to actual newlines
+      key = key.replace(/\\\\r\\\\n/g, '\r\n').replace(/\\\\n/g, '\n');
+      // Normalize all newlines (CRLF, CR) to LF for internal consistency before re-escaping
+      key = key.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+      
+      // Now, escape actual newlines to literal "\\n" for the .env string
+      const escapedKeyForEnv = key.replace(/\n/g, '\\n');
+      envFormattedPrivateKey = `"${escapedKeyForEnv}"`;
+
     } else {
-      envFormattedPrivateKey = '"-----BEGIN PRIVATE KEY-----\\nYOUR_PRIVATE_KEY_LINE_1\\nYOUR_PRIVATE_KEY_LINE_2\\n-----END PRIVATE KEY-----"';
+      envFormattedPrivateKey = '"-----BEGIN PRIVATE KEY-----\\nYOUR_PRIVATE_KEY_CONTENTS_HERE\\n-----END PRIVATE KEY-----"';
     }
 
-    const adminUsername = process.env.NEXT_PUBLIC_ADMIN_USERNAME_DEFAULT || 'admin';
-    const adminPassword = process.env.NEXT_PUBLIC_ADMIN_PASSWORD_DEFAULT || 'password';
+    const adminUsername = (typeof window !== "undefined" ? process.env.NEXT_PUBLIC_ADMIN_USERNAME_DEFAULT : '') || 'admin';
+    const adminPassword = (typeof window !== "undefined" ? process.env.NEXT_PUBLIC_ADMIN_PASSWORD_DEFAULT : '') || 'password';
 
     const content = `
 # Google Sheets API Credentials
@@ -118,7 +129,8 @@ ADMIN_PASSWORD=${adminPassword}
           Google Sheet Configuration
         </CardTitle>
         <CardDescription>
-          Enter the connection details for your Google Sheet. Use the form below to generate the content for your <code className="font-mono bg-muted px-1 py-0.5 rounded">.env.local</code> file. After generating and copying the content, you must manually update your <code className="font-mono bg-muted px-1 py-0.5 rounded">.env.local</code> file and restart the server.
+          Enter the connection details for your Google Sheet. This form helps validate the format of your credentials and generates a preview for your <code className="font-mono bg-muted px-1 py-0.5 rounded">.env.local</code> file.
+          After generating and copying the content, you must manually create or update your <code className="font-mono bg-muted px-1 py-0.5 rounded">.env.local</code> file in the project root and **restart the server** for changes to take effect.
         </CardDescription>
       </CardHeader>
       {!state?.success && state?.message && !state.errors && (
@@ -160,7 +172,7 @@ ADMIN_PASSWORD=${adminPassword}
                     <Input placeholder="e.g., Sheet1!A:E" {...field} />
                   </FormControl>
                    <FormDescription>
-                     The range where data is read and appended (e.g., Sheet1!A:E). Must be uppercase columns.
+                     The range where data is read and appended (e.g., SheetName!A:E). Must be uppercase columns.
                    </FormDescription>
                   <FormMessage />
                    {state?.errors?.sheetRange && (
@@ -197,9 +209,9 @@ ADMIN_PASSWORD=${adminPassword}
                     <Textarea placeholder="Paste the service account private key here (starts with -----BEGIN PRIVATE KEY-----)" {...field} rows={8} />
                   </FormControl>
                    <FormDescription>
-                     Paste the entire private key string from your service account JSON file.
-                     It must start with <code>-----BEGIN PRIVATE KEY-----</code> and end with <code>-----END PRIVATE KEY-----</code>.
-                     Include all characters and line breaks (newlines) exactly as they appear in the JSON value for the "private_key" field.
+                     Paste the private key string from your service account JSON file.
+                     It typically starts with <code>"-----BEGIN PRIVATE KEY-----</code> and ends with <code>-----END PRIVATE KEY-----\n"</code> (including the newline escape at the end if copying from the JSON string value).
+                     This form will attempt to correctly format it for the <code className="font-mono">.env.local</code> file preview.
                    </FormDescription>
                   <FormMessage />
                   {state?.errors?.privateKey && (
@@ -243,11 +255,16 @@ ADMIN_PASSWORD=${adminPassword}
 
              <Alert variant="default">
                 <Info className="h-4 w-4" />
-                <AlertTitle>Configuration Persistence</AlertTitle>
+                <AlertTitle>Configuration Persistence & Testing</AlertTitle>
                 <AlertDescription>
-                    Generating this preview and validating the settings confirms their format. However, the application backend primarily relies on **environment variables** set during startup (e.g., in <code className="font-mono bg-muted px-1 py-0.5 rounded">.env.local</code> or hosting provider settings).
+                    Generating this preview and validating the settings helps ensure correct format. However, the application backend (data fetching, data submission) relies on **environment variables** set at server startup (e.g., from <code className="font-mono bg-muted px-1 py-0.5 rounded">.env.local</code> or your hosting provider).
                     <br /><br />
-                    For these changes to be used by the application, you **must** manually update your <code className="font-mono bg-muted px-1 py-0.5 rounded">.env.local</code> file (using the preview above) and then **restart or redeploy** your application.
+                    For these settings to be used by the application:
+                    <ol className="list-decimal list-inside mt-2 space-y-1">
+                        <li>Manually update (or create) your <code className="font-mono bg-muted px-1 py-0.5 rounded">.env.local</code> file using the preview above.</li>
+                        <li>**Restart your Next.js development server** (or redeploy your application).</li>
+                        <li>Use the "Google Sheet Connection Test" section to verify the server is using the new settings.</li>
+                    </ol>
                 </AlertDescription>
              </Alert>
 
@@ -260,4 +277,3 @@ ADMIN_PASSWORD=${adminPassword}
     </Card>
   );
 }
-

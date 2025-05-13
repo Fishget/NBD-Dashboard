@@ -1,15 +1,15 @@
-'use client'; // Make this file a client component module for DashboardData
+'use client'; 
 
 import { Suspense, useState, useEffect } from 'react';
 // import { getSheetData } from '@/lib/sheets'; // Data fetching still commented out
-import type { SheetRow } from '@/lib/sheets'; // Type import is fine
+import type { SheetRow } from '@/lib/sheets'; 
 import { DashboardTable } from '@/components/dashboard-table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertTriangle, InfoIcon, ServerCrash } from 'lucide-react'; 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 
-// Helper component for loading skeleton (remains the same)
+// Helper component for loading skeleton
 function TableSkeleton() {
   return (
     <div className="space-y-4">
@@ -46,39 +46,36 @@ function TableSkeleton() {
   );
 }
 
-// DashboardData is now a Client Component to manage client-side rendering of DashboardTable
+// DashboardDataWrapper is a Client Component to manage client-side rendering of DashboardTable
 function DashboardDataWrapper() {
   const [isMounted, setIsMounted] = useState(false);
-  // This state would hold fetched data in a real scenario
+  // Data fetching is disabled here for debugging purposes.
+  // tableData will remain empty, allowing the UI to render without external data.
   const [tableData, setTableData] = useState<SheetRow[]>([]); 
 
   useEffect(() => {
-    console.log("[Page:DashboardDataWrapper CC] Component did mount.");
+    console.log("[Page:DashboardDataWrapper CC] Component did mount. Data fetching is currently DISABLED for debugging.");
     setIsMounted(true);
-    // Simulate data presence for DashboardTable, or fetch data client-side here
-    // For now, using empty array as per previous debug state
-    setTableData([]); 
-    // Example: if you wanted to fetch data client-side (not recommended for initial load usually):
+    // To re-enable data fetching, you would call a server action here:
     // async function fetchData() {
     //   try {
-    //     // const data = await getSheetData(); // This would need getSheetData to be callable from client
+    //     // const data = await getSheetData(); // This is a server action.
     //     // setTableData(data || []);
+    //     // console.log("[Page:DashboardDataWrapper CC] Data fetched (or attempted).");
     //   } catch (error) {
-    //     console.error("Failed to fetch data client-side:", error);
-    //     setTableData([]); // Set empty on error
+    //     // console.error("[Page:DashboardDataWrapper CC] Failed to fetch data client-side:", error);
+    //     // setTableData([]); // Set empty on error
     //   }
     // }
-    // fetchData();
+    // fetchData(); // Uncomment to attempt fetching data
   }, []);
 
   if (!isMounted) {
-    console.log("[Page:DashboardDataWrapper CC] Not mounted yet, returning TableSkeleton.");
-    // This skeleton will be shown until the component mounts on the client.
-    // The Suspense fallback in Home component might also cover the initial SSR phase.
+    // console.log("[Page:DashboardDataWrapper CC] Not mounted yet, returning TableSkeleton.");
     return <TableSkeleton />;
   }
 
-  console.log("[Page:DashboardDataWrapper CC] Mounted, rendering actual content with DashboardTable.");
+  // console.log("[Page:DashboardDataWrapper CC] Mounted, rendering content with DashboardTable.");
   return (
     <Card className="my-8 shadow-md">
       <CardHeader>
@@ -86,14 +83,30 @@ function DashboardDataWrapper() {
           <InfoIcon className="h-6 w-6" />
           Dashboard View
         </CardTitle>
+         <CardDescription>
+          Live data from Google Sheets. Charts and filters are available.
+        </CardDescription>
       </CardHeader>
       <CardContent>
-        <p className="text-lg">Data fetching from Google Sheets is temporarily disabled for debugging.</p>
-        <p className="text-sm text-muted-foreground mt-3">
-          This panel confirms that the basic page structure and client-side table rendering are working.
-          The actual dashboard table and charts will be restored once connection issues are resolved.
-        </p>
+        {tableData.length === 0 && (
+             <div className="my-4 p-4 border border-dashed border-border rounded-md bg-muted/50">
+                <div className="flex items-center gap-3 text-muted-foreground">
+                    <ServerCrash className="h-8 w-8 text-destructive" />
+                    <div>
+                        <p className="font-semibold text-card-foreground">Data Display Note</p>
+                        <p className="text-sm">
+                            Data fetching from Google Sheets is currently dependent on server configuration.
+                            If no data is displayed, please check the Google Sheet connection settings in the Admin panel.
+                        </p>
+                        <p className="text-xs mt-1">
+                            (For developers: `getSheetData` might be returning empty or actual fetching is disabled in `DashboardDataWrapper` for debugging.)
+                        </p>
+                    </div>
+                </div>
+            </div>
+        )}
          <div className="mt-6">
+            {/* DashboardTable will show "No data available" if tableData is empty */}
             <DashboardTable initialData={tableData} />
         </div>
       </CardContent>
@@ -101,16 +114,14 @@ function DashboardDataWrapper() {
   );
 }
 
-// Home component remains a Server Component by default (no 'use client' here)
 export default function Home() {
-  console.log("[Page:Home SC] Rendering Home page.");
+  // console.log("[Page:Home SC] Rendering Home page.");
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold text-primary">NBD Dashboard</h1>
       <p className="text-muted-foreground">
         Live Data
       </p>
-      {/* Suspense will handle the case where DashboardDataWrapper is loading or not yet mounted */}
       <Suspense fallback={<TableSkeleton />}>
         <DashboardDataWrapper />
       </Suspense>
@@ -118,6 +129,4 @@ export default function Home() {
   );
 }
 
-// Ensure dynamic rendering as data comes from an external source (eventually).
-// Or, if the page becomes largely static with client-side fetching, this could be revisited.
 export const dynamic = 'force-dynamic';

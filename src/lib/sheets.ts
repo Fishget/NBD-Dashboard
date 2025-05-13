@@ -1,4 +1,3 @@
-
 'use server';
 
 import { google } from 'googleapis';
@@ -19,129 +18,88 @@ const SERVICE_ACCOUNT_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
 const RAW_PRIVATE_KEY_FROM_ENV = process.env.GOOGLE_PRIVATE_KEY;
 const SHEET_RANGE = process.env.GOOGLE_SHEET_RANGE || 'Sheet1!A:E'; // Default range if not specified
 
-let PROCESSED_PRIVATE_KEY: string | undefined;
-
-// --- Private Key Processing ---
-if (typeof RAW_PRIVATE_KEY_FROM_ENV === 'string' && RAW_PRIVATE_KEY_FROM_ENV.trim() !== '') {
-    console.log('[SheetLib:PK_Process] Raw GOOGLE_PRIVATE_KEY received (type: string, not empty/whitespace). Length:', RAW_PRIVATE_KEY_FROM_ENV.length);
-    // console.log('[SheetLib:PK_Process] Raw GOOGLE_PRIVATE_KEY (first 60 chars, newlines as is):', RAW_PRIVATE_KEY_FROM_ENV.substring(0, 60));
-    
-    let key = RAW_PRIVATE_KEY_FROM_ENV;
-
-    // Step 1: Remove surrounding quotes IF they encapsulate the ENTIRE string.
-    // This handles cases like GOOGLE_PRIVATE_KEY="-----BEGIN...\n...END-----" in .env
-    if ((key.startsWith('"') && key.endsWith('"')) || (key.startsWith("'") && key.endsWith("'"))) {
-        key = key.substring(1, key.length - 1);
-        // console.log('[SheetLib:PK_Process] After stripping outer quotes (if any). Length:', key.length, '(first 60 chars):', key.substring(0, 60));
-    }
-    
-    // Step 2: Unescape literal "\\n" sequences to actual newline characters "\n".
-    // This is crucial if the key was stored as a JSON-escaped string.
-    const unescapedKey = key.replace(/\\n/g, '\n');
-    if (unescapedKey !== key) {
-      // console.log('[SheetLib:PK_Process] After unescaping \\n to actual newlines. Length:', unescapedKey.length, '(first 60 chars, newlines as [NL]):', unescapedKey.substring(0, 60).replace(/\n/g, '[NL]'));
-    } else {
-      // console.log('[SheetLib:PK_Process] No \\n sequences found to unescape. Length:', unescapedKey.length, '(first 60 chars, newlines as [NL]):', unescapedKey.substring(0, 60).replace(/\n/g, '[NL]'));
-    }
-
-    // Step 3: Trim whitespace from the (potentially) unescaped key.
-    // PEM keys are generally tolerant of this, but it helps clean up.
-    const finalKeyCandidate = unescapedKey.trim();
-    if (finalKeyCandidate !== unescapedKey) {
-        // console.log('[SheetLib:PK_Process] After final trim. Length:', finalKeyCandidate.length, '(first 60 chars, newlines as [NL]):', finalKeyCandidate.substring(0, 60).replace(/\n/g, '[NL]'));
-    }
-
-    // Step 4: Perform PEM structural checks.
-    if (
-        finalKeyCandidate.startsWith('-----BEGIN PRIVATE KEY-----') &&
-        finalKeyCandidate.endsWith('-----END PRIVATE KEY-----') &&
-        finalKeyCandidate.includes('\n') // Essential for multi-line PEM keys
-    ) {
-        const coreKeyContent = finalKeyCandidate
-            .substring('-----BEGIN PRIVATE KEY-----'.length, finalKeyCandidate.length - '-----END PRIVATE KEY-----'.length)
-            .trim(); // Content between markers should not be empty
-        
-        if (coreKeyContent.length > 0) {
-            PROCESSED_PRIVATE_KEY = finalKeyCandidate;
-            console.log('[SheetLib:PK_Process] SUCCESS: GOOGLE_PRIVATE_KEY processed and structurally validated. Ready for use. Length:', PROCESSED_PRIVATE_KEY.length);
-        } else {
-            console.warn(
-                '[SheetLib:PK_Process] WARNING: GOOGLE_PRIVATE_KEY has PEM markers but NO content in between. This key is invalid. ' +
-                `Original RAW_PRIVATE_KEY (first 30 chars, trimmed): "${(RAW_PRIVATE_KEY_FROM_ENV || "").trim().substring(0, 30)}...". ` +
-                'Sheet operations will fail.'
-            );
-            PROCESSED_PRIVATE_KEY = undefined;
-        }
-    } else {
-        console.warn(
-            '[SheetLib:PK_Process] WARNING: GOOGLE_PRIVATE_KEY is malformed after processing. It does NOT meet PEM structural requirements (missing markers or newlines). ' +
-            `Final candidate started with: "${finalKeyCandidate.substring(0, 30).replace(/\n/g, '[NL]')}". ` +
-            `Ended with: "...${finalKeyCandidate.substring(Math.max(0, finalKeyCandidate.length - 30)).replace(/\n/g, '[NL]')}". ` +
-            `Contained newlines: ${finalKeyCandidate.includes('\n')}. ` +
-            'Ensure it is a valid PEM key. Sheet operations will fail.'
-        );
-        PROCESSED_PRIVATE_KEY = undefined;
-    }
-} else {
-    if (RAW_PRIVATE_KEY_FROM_ENV === undefined) {
-        console.warn('[SheetLib:PK_Process] GOOGLE_PRIVATE_KEY environment variable is NOT SET.');
-    } else { 
-        console.warn('[SheetLib:PK_Process] GOOGLE_PRIVATE_KEY environment variable IS SET but is EMPTY or only WHITESPACE. This is invalid.');
-    }
-    PROCESSED_PRIVATE_KEY = undefined;
-}
-// --- End Private Key Processing ---
-
-// Initial check for logging purposes; actual guard is in getSheetsClient
-(() => {
-  const missingVarsWarn = [];
-  if (!SHEET_ID) missingVarsWarn.push('GOOGLE_SHEET_ID');
-  if (!SERVICE_ACCOUNT_EMAIL) missingVarsWarn.push('GOOGLE_SERVICE_ACCOUNT_EMAIL');
-  
-  if (!PROCESSED_PRIVATE_KEY) { 
-     missingVarsWarn.push('PROCESSED_PRIVATE_KEY (failed processing - see detailed [SheetLib:PK_Process] logs above)');
+function processPrivateKey(rawKey: string | undefined): string | null {
+  if (typeof rawKey !== 'string' || rawKey.trim() === '') {
+    console.error('[SheetLib:PK_Process] Raw GOOGLE_PRIVATE_KEY is undefined, empty, or whitespace.');
+    return null;
   }
-  // Not warning for SHEET_RANGE if using default.
+  console.log('[SheetLib:PK_Process] Received GOOGLE_PRIVATE_KEY. Length:', rawKey.length);
 
-  if (missingVarsWarn.length > 0) {
-    console.warn(
-      `[SheetLib:InitCheck] WARNING: One or more Google Sheets API configurations are problematic. Sheet operations are likely to fail. Problematic items: [${missingVarsWarn.join(', ')}]`
-    );
+  let key = rawKey;
+
+  // 1. Trim whitespace from the raw input.
+  key = key.trim();
+
+  // 2. Remove surrounding quotes if they encapsulate the ENTIRE string.
+  if ((key.startsWith('"') && key.endsWith('"')) || (key.startsWith("'") && key.endsWith("'"))) {
+    key = key.substring(1, key.length - 1);
+    // console.log('[SheetLib:PK_Process] After stripping outer quotes. Preview (first 60):', key.substring(0, 60));
+  }
+
+  // 3. Unescape literal "\\n" and "\\r\\n" to actual newline characters "\n".
+  // This is crucial if the key was stored as a JSON-escaped string or .env escaped string.
+  // Must handle \\r\\n first if present.
+  key = key.replace(/\\\\r\\\\n/g, '\r\n').replace(/\\\\n/g, '\n');
+
+
+  // 4. Normalize all newlines (CRLF, CR) to LF.
+  key = key.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  // console.log('[SheetLib:PK_Process] After unescaping and normalizing newlines. Preview (first 60, NL as [NL]):', key.substring(0, 60).replace(/\n/g, '[NL]'));
+
+
+  // 5. Perform PEM structural checks.
+  if (
+    key.startsWith('-----BEGIN PRIVATE KEY-----') &&
+    key.endsWith('-----END PRIVATE KEY-----') &&
+    key.includes('\n') // Essential for multi-line PEM keys
+  ) {
+    const coreKeyContent = key
+      .substring('-----BEGIN PRIVATE KEY-----'.length, key.length - '-----END PRIVATE KEY-----'.length)
+      .trim();
+
+    if (coreKeyContent.length > 0) {
+      console.log('[SheetLib:PK_Process] SUCCESS: GOOGLE_PRIVATE_KEY processed and structurally validated.');
+      return key;
+    } else {
+      console.error('[SheetLib:PK_Process] ERROR: GOOGLE_PRIVATE_KEY has PEM markers but NO content in between. This key is invalid.');
+      return null;
+    }
   } else {
-    console.log('[SheetLib:InitCheck] SUCCESS: All essential Google Sheets API variables (ID, Email, Processed Key) appear to be present and structurally valid.');
+    console.error(
+      '[SheetLib:PK_Process] ERROR: GOOGLE_PRIVATE_KEY is malformed. It does NOT meet PEM structural requirements (missing markers, missing newlines, or other issues). ' +
+      `Ensure it is a valid PEM key. Starts with: "${key.substring(0,30).replace(/\n/g,'[NL]')}", Ends with: "...${key.substring(key.length-30).replace(/\n/g,'[NL]')}", Includes newlines: ${key.includes('\n')}`
+    );
+    return null;
   }
-})();
-
+}
 
 export async function getSheetsClient(): Promise<sheets_v4.Sheets | null> {
   const errorParts: string[] = [];
-  if (!SHEET_ID) {
-    errorParts.push('GOOGLE_SHEET_ID is not set.');
-  }
-  if (!SERVICE_ACCOUNT_EMAIL) {
-    errorParts.push('GOOGLE_SERVICE_ACCOUNT_EMAIL is not set.');
-  }
-  if (!PROCESSED_PRIVATE_KEY) {
-    // Detailed reason already logged by PK_Process block
-    errorParts.push('PROCESSED_PRIVATE_KEY is unusable (not set, empty, or failed processing - check server logs for "[SheetLib:PK_Process]" details).');
+  if (!SHEET_ID) errorParts.push('GOOGLE_SHEET_ID is not set.');
+  if (!SERVICE_ACCOUNT_EMAIL) errorParts.push('GOOGLE_SERVICE_ACCOUNT_EMAIL is not set.');
+
+  const processedPrivateKey = processPrivateKey(RAW_PRIVATE_KEY_FROM_ENV);
+
+  if (!processedPrivateKey) {
+    // processPrivateKey already logged the detailed reason.
+    errorParts.push('GOOGLE_PRIVATE_KEY is missing, malformed, or failed processing (see server logs for "[SheetLib:PK_Process]" details).');
   }
 
   if (errorParts.length > 0) {
     const fullMessage = '[SheetLib:getSheetsClient] Cannot initialize Sheets client due to configuration issues:\n- ' + errorParts.join('\n- ');
     console.error(fullMessage);
-    // Do not throw here; return null so getSheetData can throw a more user-facing error.
     return null;
   }
 
   try {
     // console.log('[SheetLib:getSheetsClient] Attempting to create GoogleAuth client with processed credentials.');
     // console.log(`[SheetLib:getSheetsClient] Using Service Account Email: ${SERVICE_ACCOUNT_EMAIL}`);
-    // console.log(`[SheetLib:getSheetsClient] Using Processed Private Key (first 60 chars, newlines as [NL]): ${PROCESSED_PRIVATE_KEY!.substring(0, 60).replace(/\n/g, '[NL]')}`);
-    
+    // console.log(`[SheetLib:getSheetsClient] Using Processed Private Key (first 60 chars, newlines as [NL]): ${processedPrivateKey!.substring(0, 60).replace(/\n/g, '[NL]')}`);
+
     const auth = new google.auth.GoogleAuth({
       credentials: {
-        client_email: SERVICE_ACCOUNT_EMAIL!, 
-        private_key: PROCESSED_PRIVATE_KEY!,  
+        client_email: SERVICE_ACCOUNT_EMAIL!,
+        private_key: processedPrivateKey!,
       },
       scopes: ['https://www.googleapis.com/auth/spreadsheets'],
     });
@@ -151,15 +109,15 @@ export async function getSheetsClient(): Promise<sheets_v4.Sheets | null> {
     console.error('[SheetLib:getSheetsClient] CRITICAL: Error initializing Google Auth client (e.g., during GoogleAuth constructor or google.sheets call):');
     console.error('Error Message:', error.message);
     if (error.stack) console.error('Error Stack:', error.stack);
-        
+
     if (error.message?.includes('DECODER routines') || error.message?.includes('PEM routines') || error.message?.includes('private key') || error.message?.includes('asn1 encoding')) {
-        console.error(
-          '[SheetLib:getSheetsClient] Auth Init Error Detail: This specific error indicates an issue with the PROCESSED_PRIVATE_KEY format or value that the underlying crypto library cannot parse. ' +
-          'This can happen even if it passed initial structural checks if the key content itself is corrupted or not truly PEM. ' +
-          'Verify the original key source.'
-        );
+      console.error(
+        '[SheetLib:getSheetsClient] Auth Init Error Detail: This specific error indicates an issue with the PROCESSED_PRIVATE_KEY format or value that the underlying crypto library cannot parse. ' +
+        'This can happen even if it passed initial structural checks if the key content itself is corrupted or not truly PEM. ' +
+        'Verify the original key source.'
+      );
     }
-    return null; // Return null to be handled by getSheetData
+    return null;
   }
 }
 
@@ -169,29 +127,28 @@ export async function getSheetData(): Promise<SheetRow[]> {
   try {
       sheets = await getSheetsClient();
   } catch (clientError: any) {
-      // This catch block is somewhat redundant if getSheetsClient itself handles its errors and returns null.
-      // However, it's a safeguard for unexpected errors during the await getSheetsClient() call itself.
       console.error('[SheetLib:getSheetData] Unexpected error while awaiting getSheetsClient():', clientError.message);
       if (clientError.stack) console.error(clientError.stack);
-      throw new Error(`ConfigurationError: Failed to obtain Google Sheets client instance: ${clientError.message}. Check server logs for details.`);
+      // To prevent SSR crash for config issue, log and return empty. User can test connection in admin.
+      console.error("getSheetData failed to get client, returning empty array to allow UI to load. Error: " + clientError.message);
+      return [];
   }
 
   if (!sheets) {
-     const msg = `ConfigurationError: Google Sheets client failed to initialize. This is usually due to missing or invalid credentials (GOOGLE_SHEET_ID, GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY) or a malformed private key. Please review server logs for detailed messages from '[SheetLib:getSheetsClient]' or '[SheetLib:PK_Process]' for specific issues.`;
+     const msg = `ConfigurationError: Google Sheets client failed to initialize. This is usually due to missing or invalid credentials (GOOGLE_SHEET_ID, GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY) or a malformed private key. Please review server logs for detailed messages from '[SheetLib:getSheetsClient]' or '[SheetLib:PK_Process]' for specific issues. Returning empty data to allow UI to load.`;
      console.error('[SheetLib:getSheetData] ' + msg);
-     throw new Error(msg);
+     return []; // Return empty array to prevent SSR crash
   }
 
-  // These should ideally be caught by getSheetsClient returning null, but as a safeguard:
-  if (!SHEET_ID){ 
-    const msg = "ConfigurationError: GOOGLE_SHEET_ID is not configured on the server. Cannot fetch data.";
+  if (!SHEET_ID){
+    const msg = "ConfigurationError: GOOGLE_SHEET_ID is not configured on the server. Cannot fetch data. Returning empty data.";
     console.error('[SheetLib:getSheetData] ' + msg);
-    throw new Error(msg);
+    return [];
   }
-  if (!SHEET_RANGE){ 
-    const msg = "ConfigurationError: GOOGLE_SHEET_RANGE is not configured on the server (though a default exists). Cannot fetch data.";
+  if (!SHEET_RANGE){
+    const msg = "ConfigurationError: GOOGLE_SHEET_RANGE is not configured on the server (though a default exists). Cannot fetch data. Returning empty data.";
     console.error('[SheetLib:getSheetData] ' + msg);
-    throw new Error(msg);
+    return [];
   }
 
   try {
@@ -204,7 +161,7 @@ export async function getSheetData(): Promise<SheetRow[]> {
     const rows = response.data.values;
     if (!rows || rows.length === 0) {
       // console.log('[SheetLib:getSheetData] No data found in the specified sheet range or sheet is empty.');
-      return []; 
+      return [];
     }
 
     const headers = rows[0].map(header => String(header).trim());
@@ -219,36 +176,38 @@ export async function getSheetData(): Promise<SheetRow[]> {
     return dataRows.map((row) => {
       const rowData: Partial<SheetRow> = {};
       headers.forEach((header, index) => {
-        const cellValue = row[index] !== undefined && row[index] !== null ? String(row[index]) : ''; 
+        const cellValue = row[index] !== undefined && row[index] !== null ? String(row[index]) : '';
 
-        if (expectedHeaders.includes(header)) { 
+        if (expectedHeaders.includes(header)) {
             if ((header === 'Priority' || header === 'Probability')) {
                const value = cellValue.trim();
                if (['High', 'Medium', 'Low'].includes(value)) {
                   rowData[header as keyof SheetRow] = value as 'High' | 'Medium' | 'Low';
                } else {
-                  rowData[header as keyof SheetRow] = 'Medium'; 
+                  rowData[header as keyof SheetRow] = 'Medium'; // Default if value is unexpected
                }
             } else {
                rowData[header as keyof SheetRow] = cellValue;
             }
         }
       });
+      // Ensure all expected keys exist, even if not in sheet headers
       expectedHeaders.forEach(eh => {
         const key = eh as keyof SheetRow;
         if (!(key in rowData)) {
           if (key === 'Priority' || key === 'Probability') {
-            rowData[key] = 'Medium'; 
+            rowData[key] = 'Medium'; // Default for missing priority/probability columns
           } else {
-            rowData[key] = ''; 
+            rowData[key] = ''; // Default for other missing columns
           }
         }
       });
       return rowData as SheetRow;
-    }).filter(row => { 
+    }).filter(row => { // Filter out rows that are completely empty or have no essential data
       const opp = row['Donor/Opp']?.trim();
       const action = row['Action/Next Step']?.trim();
       const lead = row.Lead?.trim();
+      // Only keep row if at least one of these key fields has content
       return !!(opp || action || lead);
     });
 
@@ -259,9 +218,9 @@ export async function getSheetData(): Promise<SheetRow[]> {
     if (error.code) console.error('Error Code:', error.code);
     if (error.errors) console.error('Error Details (from googleapis error object):', JSON.stringify(error.errors, null, 2));
     if (error.stack) console.error('Error Stack:', error.stack);
-    
+
     let specificHint = `APIError: Error calling Google Sheets API (spreadsheets.values.get): ${error.message}`;
-    const apiError = error.errors?.[0]; // Google API errors often have a structured error object
+    const apiError = error.errors?.[0];
 
     if (apiError) {
         if (apiError.reason === 'PERMISSION_DENIED' || apiError.message?.includes('does not have permission')) {
@@ -274,9 +233,9 @@ export async function getSheetData(): Promise<SheetRow[]> {
     } else if (error.message?.includes('UNAUTHENTICATED')) {
         specificHint = `APIError: Authentication Failed. This usually indicates a problem with the processed service account credentials. Re-verify the private key and service account email.`;
     }
-    
+
     console.error(`[SheetLib:getSheetData] Specific Error Hint: ${specificHint}`);
-    throw new Error(specificHint); 
+    throw new Error(specificHint); // Re-throw API errors to be caught by error boundaries
   }
 }
 
@@ -286,17 +245,14 @@ export async function appendSheetRow(rowData: Omit<SheetRow, ''>): Promise<boole
       sheets = await getSheetsClient();
   } catch (clientError: any) {
       console.error('[SheetLib:appendSheetRow] Error obtaining Google Sheets client in appendSheetRow:', clientError.message);
-      // For actions, it's better to throw or return a structured error.
-      // For now, we'll let the next check handle the null `sheets` client.
+      throw new Error(`ConfigurationError: Failed to obtain Google Sheets client instance for appending: ${clientError.message}. Check server logs.`);
   }
 
    if (!sheets) {
-      const msg = `ConfigurationError: Google Sheets client not available for appendSheetRow. Check server logs for initialization errors.`;
+      const msg = `ConfigurationError: Google Sheets client not available for appendSheetRow. Check server logs for initialization errors. This usually means credentials in .env.local are missing or invalid.`;
       console.error("[SheetLib:appendSheetRow] " + msg);
-      // This should be converted to a FormState error in actions.ts
-      throw new Error(msg); 
+      throw new Error(msg);
    }
-   // Safeguards, though getSheetsClient should handle these by returning null if misconfigured
    if (!SHEET_ID) { throw new Error("ConfigurationError: GOOGLE_SHEET_ID is not configured for appendSheetRow."); }
    if (!SHEET_RANGE) { throw new Error("ConfigurationError: GOOGLE_SHEET_RANGE is not configured for appendSheetRow."); }
 
@@ -312,9 +268,9 @@ export async function appendSheetRow(rowData: Omit<SheetRow, ''>): Promise<boole
   try {
     await sheets.spreadsheets.values.append({
       spreadsheetId: SHEET_ID,
-      range: SHEET_RANGE, 
-      valueInputOption: 'USER_ENTERED', 
-      insertDataOption: 'INSERT_ROWS', 
+      range: SHEET_RANGE,
+      valueInputOption: 'USER_ENTERED',
+      insertDataOption: 'INSERT_ROWS',
       requestBody: {
         values: [values],
       },
@@ -335,9 +291,6 @@ export async function appendSheetRow(rowData: Omit<SheetRow, ''>): Promise<boole
         }
     }
     console.error('[SheetLib:appendSheetRow] Specific Error Hint for append: ' + specificHint);
-    // For actions.ts, throwing the error is better so it can be converted to FormState
     throw new Error(specificHint);
   }
 }
-
-    
