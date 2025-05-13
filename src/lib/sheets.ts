@@ -205,11 +205,45 @@ export async function getSheetData(): Promise<SheetRow[] | null> {
 
   } catch (error: any) {
     console.error('[SheetLib:getSheetData] CRITICAL ERROR during sheets.spreadsheets.values.get API call:');
-    // ... (keep existing detailed API error logging) ...
-    let specificHint = `APIError: Error calling Google Sheets API (spreadsheets.values.get): ${error.message}`;
-    // ... (keep existing specific hint generation) ...
-    console.error(`[SheetLib:getSheetData] Specific Error Hint: ${specificHint}. Returning empty array to prevent UI crash, but data fetch failed.`);
-    return []; // API call failed, return empty array but not null, as config was okay
+    
+    let details = 'Unknown API error during data fetch.';
+    if (error.message) {
+      details = error.message;
+    }
+    
+    // Check for common Google API error structures
+    if (error.response?.data?.error?.message) {
+        details = `Google API Error: ${error.response.data.error.message} (Status: ${error.response.data.error.code})`;
+    } else if (error.errors && Array.isArray(error.errors) && error.errors.length > 0) {
+        details = `Google API Error: ${error.errors[0].message} (Reason: ${error.errors[0].reason})`;
+    } else if (error.code) { // e.g., Node.js system errors like ENOTFOUND
+        details = `System Error Code: ${error.code}, Message: ${error.message}`;
+    }
+
+    let specificHint = details; // Start with the most specific detail we found
+
+    const gErrorCode = error.response?.data?.error?.code || (typeof error.code === 'number' ? error.code : null);
+
+
+    if (details.includes('PERMISSION_DENIED') || gErrorCode === 403) {
+        specificHint = `Permission Denied. Ensure the service account (${SERVICE_ACCOUNT_EMAIL || 'SERVICE_ACCOUNT_EMAIL_not_set_in_env'}) has at least 'Viewer' access to the Google Sheet (ID: ${SHEET_ID || 'SHEET_ID_not_set_in_env'}). You need to share the sheet with the service account email.`;
+    } else if (details.includes('Requested entity was not found') || gErrorCode === 404) {
+        specificHint = `Sheet Not Found. Verify that the GOOGLE_SHEET_ID ('${SHEET_ID || 'SHEET_ID_not_set_in_env'}') is correct and the sheet exists. Also check if the GOOGLE_SHEET_RANGE ('${SHEET_RANGE || 'Using default range'}') is valid for this sheet (e.g., the sheet name in the range exists).`;
+    } else if (details.includes('INVALID_ARGUMENT') || details.includes('Unable to parse range') || gErrorCode === 400) {
+        specificHint = `Invalid Argument or Range. The GOOGLE_SHEET_RANGE ('${SHEET_RANGE || 'Using default range'}') is likely invalid or does not exist in the sheet. Ensure it's in 'SheetName!A1:E' format. The error might also indicate a malformed Sheet ID.`;
+    } else if (details.includes('UNAUTHENTICATED') || gErrorCode === 401) {
+        specificHint = `Authentication Failed. The service account credentials may be invalid or expired. This is less likely if client initialization succeeded but could indicate a permissions revocation or token issue. Check the validity of your service account key.`;
+    } else if (details.includes('ENOTFOUND') || details.includes('EAI_AGAIN')) {
+        specificHint = `Network Error: Could not resolve hostname (e.g., www.googleapis.com). Check server's internet connectivity and DNS resolution. Error: ${error.message}`;
+    } else if (gErrorCode === 500 || gErrorCode === 503) {
+        specificHint = `Google API Server Error (Status: ${gErrorCode}). This is likely a temporary issue on Google's side. Try again later. Error: ${details}`;
+    }
+
+
+    console.error(`[SheetLib:getSheetData] Full Error Object Structure (if available from Google API):`, JSON.stringify(error.response?.data || error.errors || error, null, 2));
+    console.error(`[SheetLib:getSheetData] Processed Error Details from API call: ${details}`);
+    console.error(`[SheetLib:getSheetData] Specific User Hint for API call failure: ${specificHint}. Returning empty array to prevent UI crash, but data fetch failed.`);
+    return []; // API call failed, return empty array. Config was likely okay if client initialized.
   }
 }
 
@@ -258,7 +292,17 @@ export async function appendSheetRow(rowData: Omit<SheetRow, ''>): Promise<boole
     return true;
   } catch (error: any) {
     console.error('[SheetLib:appendSheetRow] Error appending sheet row via Google Sheets API:');
-    // ... (keep existing detailed API error logging for append) ...
+     let details = 'Unknown API error during data append.';
+    if (error.message) {
+      details = error.message;
+    }
+     if (error.response?.data?.error?.message) {
+        details = `Google API Error: ${error.response.data.error.message} (Status: ${error.response.data.error.code})`;
+    } else if (error.errors && Array.isArray(error.errors) && error.errors.length > 0) {
+        details = `Google API Error: ${error.errors[0].message} (Reason: ${error.errors[0].reason})`;
+    }
+    console.error(`[SheetLib:appendSheetRow] Full Error Object:`, JSON.stringify(error.response?.data || error.errors || error, null, 2));
+    console.error(`[SheetLib:appendSheetRow] Processed Error Details: ${details}`);
     return false;
   }
 }
