@@ -3,7 +3,7 @@ import { Suspense } from 'react';
 import { getSheetData, type SheetRow } from '@/lib/sheets';
 import { DashboardTable } from '@/components/dashboard-table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AlertTriangle, InfoIcon, ServerCrash } from 'lucide-react'; // Added ServerCrash
+import { AlertTriangle, InfoIcon, ServerCrash } from 'lucide-react'; 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 
@@ -46,100 +46,94 @@ function TableSkeleton() {
 
 // Data fetching component wrapped for Suspense
 async function DashboardData() {
-  let data: SheetRow[] | null = null; // Allow null to explicitly track fetch state
+  let data: SheetRow[] | null = null; 
   let errorObject: { message: string; details?: string } | null = null;
 
-  // Check for essential env variables for a more specific initial error message
+  console.log("[Page:DashboardData] Component rendering started.");
+
   const isConfigSufficient = 
     process.env.GOOGLE_SHEET_ID &&
     process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL &&
     process.env.GOOGLE_PRIVATE_KEY &&
-    process.env.GOOGLE_PRIVATE_KEY.trim() !== '' &&
+    process.env.GOOGLE_PRIVATE_KEY.trim() !== '' && 
     process.env.GOOGLE_PRIVATE_KEY.trim() !== '""' && 
     process.env.GOOGLE_PRIVATE_KEY.trim() !== "''";
 
   if (!isConfigSufficient) {
+    console.error("[Page:DashboardData] Initial config check FAILED. Missing or invalid essential env vars.");
     errorObject = {
       message: "Google Sheets API is not configured correctly on the server.",
       details: "One or more essential environment variables (GOOGLE_SHEET_ID, GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY) are missing or invalid. Please ensure these are set correctly (e.g., in your .env.local file or hosting provider settings) and the server has been restarted. The private key, if set, must not be an empty or placeholder string."
     };
   } else {
     try {
-      console.log("Home page: Attempting to fetch dashboard data via getSheetData()...");
+      console.log("[Page:DashboardData] Config sufficient. Attempting to fetch dashboard data via getSheetData()...");
       data = await getSheetData(); 
-      console.log(`Home page: Successfully fetched ${data?.length ?? 'N/A'} rows.`);
+      console.log(`[Page:DashboardData] Successfully fetched ${data?.length ?? 'N/A'} rows.`);
       if (!Array.isArray(data)) {
-        console.error("Home page: getSheetData() did not return an array. This is unexpected. Data received:", data);
-        throw new Error("Received invalid data format from the data source.");
+        console.error("[Page:DashboardData] CRITICAL: getSheetData() did not return an array and did not throw. This is unexpected. Data received:", data);
+        throw new Error("Received invalid data format (non-array) from the data source without a prior error being thrown.");
       }
     } catch (error: any) {
-      console.error("Home page: CRITICAL error during getSheetData() call:", error);
+      console.error("[Page:DashboardData] CRITICAL error during getSheetData() call or subsequent processing:", error);
       errorObject = {
         message: error.message || 'An unexpected error occurred while fetching data from Google Sheets.',
-        details: error.stack || 'No stack trace available.'
+        details: error.stack || (typeof error === 'string' ? error : 'No stack trace available.')
       };
-      if (error.message?.includes("ConfigurationError")) { // Specific error from our sheets.ts
+      if (error.message?.includes("ConfigurationError")) {
          errorObject.details = `${error.message}. This usually means GOOGLE_SHEET_ID, GOOGLE_SERVICE_ACCOUNT_EMAIL, or GOOGLE_PRIVATE_KEY is missing, malformed, or the service account doesn't have permissions. Check server logs for more specific messages starting with '[SheetLib]' or '[SheetLib:getSheetsClient]'.`;
       } else if (error.message?.includes("Failed to initialize Google Sheets client")) {
          errorObject.details = `${error.message}. This indicates a problem during the Google Auth library initialization, often due to a malformed private key or incorrect service account email. Check server logs for '[SheetLib:getSheetsClient]' errors.`;
+      } else if (error.message?.includes("APIError")) {
+         errorObject.details = error.message;
       }
     }
   }
 
   if (errorObject) {
+    console.log("[Page:DashboardData] Rendering error state UI.");
+    // Using basic HTML for robust error display
     return (
-      <Card className="border-destructive shadow-xl my-8">
-        <CardHeader className="bg-destructive text-destructive-foreground">
-          <CardTitle className="flex items-center gap-3 text-2xl">
-            <ServerCrash className="h-8 w-8" />
-            Dashboard Unavailable
-          </CardTitle>
-           <CardDescription className="text-destructive-foreground/90">
-            Failed to load data from Google Sheets.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="pt-6 space-y-3">
-          <p className="font-semibold text-lg text-card-foreground">{errorObject.message}</p>
-          {errorObject.details && (
-            <div className="mt-2 p-3 bg-muted rounded-md border border-destructive/30">
-              <p className="text-sm text-card-foreground font-medium mb-1">Technical Details:</p>
-              <pre className="text-xs whitespace-pre-wrap break-all text-muted-foreground">{errorObject.details}</pre>
-            </div>
-          )}
-          <p className="text-sm text-muted-foreground mt-4">
-            <strong>Troubleshooting Steps:</strong>
-            <ul className="list-disc list-inside mt-1 space-y-1">
-              <li>Verify that `GOOGLE_SHEET_ID`, `GOOGLE_SERVICE_ACCOUNT_EMAIL`, and `GOOGLE_PRIVATE_KEY` are correctly set in your server environment (e.g., `.env.local` file for development).</li>
-              <li>Ensure the `GOOGLE_PRIVATE_KEY` is the complete, correctly formatted PEM key string.</li>
-              <li>Confirm the service account has appropriate permissions (at least 'Viewer') for the Google Sheet.</li>
-              <li>If you recently updated environment variables, restart your server.</li>
-              <li>Check your server's console logs for more specific error messages, especially those prefixed with `[SheetLib]` or relating to Google API calls.</li>
-            </ul>
-          </p>
-        </CardContent>
-      </Card>
+      <div style={{ padding: '20px', margin: '20px auto', maxWidth: '800px', border: '2px solid #e74c3c', borderRadius: '8px', backgroundColor: '#fceded', color: '#c0392b', fontFamily: 'Arial, sans-serif' }}>
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '15px' }}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '10px' }}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+          <h2 style={{ margin: '0', fontSize: '1.5em', fontWeight: 'bold' }}>Dashboard Unavailable</h2>
+        </div>
+        <p style={{ fontSize: '1.1em', fontWeight: 'bold', margin: '0 0 10px 0' }}>{errorObject.message}</p>
+        {errorObject.details && (
+          <div style={{ marginTop: '10px', padding: '10px', backgroundColor: '#f9ebea', border: '1px dashed #e57373', borderRadius: '4px' }}>
+            <p style={{ margin: '0 0 5px 0', fontWeight: 'bold', fontSize: '0.9em' }}>Technical Details:</p>
+            <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all', fontSize: '0.85em', color: '#7f8c8d', margin: '0', maxHeight: '200px', overflowY: 'auto' }}>
+              {errorObject.details}
+            </pre>
+          </div>
+        )}
+        <p style={{ marginTop: '15px', fontSize: '0.9em', color: '#34495e' }}>
+          <strong>Troubleshooting Steps:</strong>
+          <ul style={{ margin: '5px 0 0 20px', padding: '0', listStyleType: 'disc' }}>
+            <li>Verify that `GOOGLE_SHEET_ID`, `GOOGLE_SERVICE_ACCOUNT_EMAIL`, and `GOOGLE_PRIVATE_KEY` are correctly set in your server environment (e.g., `.env.local` file for development).</li>
+            <li>Ensure the `GOOGLE_PRIVATE_KEY` is the complete, correctly formatted PEM key string.</li>
+            <li>Confirm the service account has appropriate permissions (at least 'Viewer') for the Google Sheet.</li>
+            <li>If you recently updated environment variables, <strong>restart your server</strong>.</li>
+            <li>Check your server's console logs for more specific error messages, especially those prefixed with `[SheetLib]`, `[Page:DashboardData]`, or relating to Google API calls.</li>
+          </ul>
+        </p>
+      </div>
     );
   }
   
   if (data === null) {
-    // This case should ideally be caught by the errorObject block if fetching failed.
-    // If data is null but no errorObject, it's an unexpected state.
+    console.log("[Page:DashboardData] Data is null and no errorObject was set. Rendering unexpected state UI.");
     return (
-        <Card className="border-destructive shadow-xl my-8">
-             <CardHeader className="bg-destructive text-destructive-foreground">
-                <CardTitle className="flex items-center gap-3 text-2xl">
-                    <ServerCrash className="h-8 w-8" />
-                    Unexpected State
-                </CardTitle>
-             </CardHeader>
-            <CardContent className="pt-6">
-                <p>The dashboard data could not be prepared, and no specific error was reported. This is an unexpected situation. Please check server logs.</p>
-            </CardContent>
-        </Card>
+      <div style={{ padding: '20px', margin: '20px auto', maxWidth: '800px', border: '1px solid #f39c12', borderRadius: '8px', backgroundColor: '#fffaf0', color: '#e67e22' }}>
+        <h2 style={{ margin: '0 0 10px 0' }}>Unexpected State</h2>
+        <p>The dashboard data could not be prepared, and no specific error was reported. This is an unexpected situation. Please check server logs for messages prefixed with `[Page:DashboardData]` or `[SheetLib]`.</p>
+      </div>
     );
   }
   
-  if (data.length === 0 && isConfigSufficient) { // data is confirmed to be an array here
+  if (data.length === 0 && isConfigSufficient) { 
+     console.log("[Page:DashboardData] Data array is empty. Rendering 'No Data Found' UI.");
      return (
         <Card className="my-8 shadow-md">
             <CardHeader>
@@ -161,6 +155,7 @@ async function DashboardData() {
      );
   }
   
+  console.log("[Page:DashboardData] Data fetched successfully. Rendering DashboardTable.");
   return <DashboardTable initialData={data} />;
 }
 
