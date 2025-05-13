@@ -5,13 +5,13 @@ import { useState, useEffect } from 'react';
 import { AdminForm } from '@/components/admin-form';
 import { SheetConfigForm } from '@/components/sheet-config-form';
 import { LogoutButton } from '@/components/logout-button';
-import { Separator } from '@/components/ui/separator';
 import { ConnectionTester } from '@/components/connection-tester';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { TestTubeDiagonal } from 'lucide-react';
+import { TestTubeDiagonal, Eye, EyeOff, LayoutGrid, Settings } from 'lucide-react';
 import { LoginForm } from '@/components/login-form';
 import { Button } from '@/components/ui/button';
-import { Eye, EyeOff } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from '@/components/ui/separator';
 
 interface AdminPageClientProps {
   initialLoggedIn: boolean;
@@ -24,9 +24,6 @@ export default function AdminPageClient({ initialLoggedIn }: AdminPageClientProp
 
   useEffect(() => {
     setLoggedIn(initialLoggedIn);
-    // Reset connection verified state if user logs out and logs back in,
-    // or if the initialLoggedIn state changes for any other reason.
-    // This ensures they re-verify if needed.
     if (!initialLoggedIn) {
         setIsConnectionVerified(false);
         setShowConfigFormOverride(false);
@@ -35,7 +32,7 @@ export default function AdminPageClient({ initialLoggedIn }: AdminPageClientProp
 
   const handleConnectionSuccess = () => {
     setIsConnectionVerified(true);
-    setShowConfigFormOverride(false); // If they were manually showing it, hide on new success
+    setShowConfigFormOverride(false); 
   };
 
   const toggleShowConfigForm = () => {
@@ -44,15 +41,30 @@ export default function AdminPageClient({ initialLoggedIn }: AdminPageClientProp
 
   const displayConfigForm = !isConnectionVerified || showConfigFormOverride;
 
+  if (!loggedIn) {
+    return <LoginForm />;
+  }
+
   return (
     <div className="space-y-8">
-      {loggedIn ? (
-        <>
-          <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold">Admin Panel</h1>
-            <LogoutButton />
-          </div>
-          
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Admin Panel</h1>
+        <LogoutButton />
+      </div>
+
+      <Tabs defaultValue="data-entry" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 md:w-[400px]">
+          <TabsTrigger value="data-entry">
+            <LayoutGrid className="mr-2 h-4 w-4" />
+            Data Entry
+          </TabsTrigger>
+          <TabsTrigger value="configuration">
+            <Settings className="mr-2 h-4 w-4" />
+            Sheet Configuration
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="data-entry" className="mt-6">
           <Card>
             <CardHeader>
               <CardTitle>Add New Entry</CardTitle>
@@ -62,9 +74,9 @@ export default function AdminPageClient({ initialLoggedIn }: AdminPageClientProp
               <AdminForm />
             </CardContent>
           </Card>
+        </TabsContent>
 
-          <Separator className="my-10" />
-          
+        <TabsContent value="configuration" className="mt-6 space-y-8">
           {displayConfigForm ? (
             <SheetConfigForm />
           ) : (
@@ -82,8 +94,8 @@ export default function AdminPageClient({ initialLoggedIn }: AdminPageClientProp
               </CardContent>
             </Card>
           )}
-           {isConnectionVerified && !displayConfigForm && <Separator className="my-10" />}
-
+          
+          {isConnectionVerified && !displayConfigForm && <Separator />}
 
           <Card>
             <CardHeader>
@@ -110,11 +122,8 @@ export default function AdminPageClient({ initialLoggedIn }: AdminPageClientProp
               )}
             </CardContent>
           </Card>
-
-        </>
-      ) : (
-        <LoginForm />
-      )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

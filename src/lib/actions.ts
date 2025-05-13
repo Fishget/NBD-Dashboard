@@ -37,8 +37,7 @@ export async function loginAction(
 
     if (checkCredentials(username, password)) {
       await setAuthCookie();
-       // Revalidate admin path to trigger UI update after login
-      revalidatePath('/admin');
+      revalidatePath('/admin'); // Revalidate admin path to trigger UI update after login
       return { message: 'Login successful!', success: true };
     } else {
       return { message: 'Invalid username or password.', success: false };
@@ -51,8 +50,7 @@ export async function loginAction(
 
 export async function logoutAction(): Promise<void> {
    await clearAuthCookie();
-   // Revalidate admin path to trigger UI update after logout
-   revalidatePath('/admin');
+   revalidatePath('/admin'); // Revalidate admin path to trigger UI update after logout
 }
 
 
@@ -81,7 +79,6 @@ export async function submitDataAction(
 
     const dataToAppend: SheetRowFormData = parsed.data;
 
-    // Check if sheets connection is configured before attempting append
     if (!process.env.GOOGLE_SHEET_ID || !process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || !process.env.GOOGLE_PRIVATE_KEY) {
         return { message: 'Google Sheet connection is not configured on the server.', success: false };
     }
@@ -89,8 +86,8 @@ export async function submitDataAction(
     const success = await appendSheetRow(dataToAppend);
 
     if (success) {
-      // Revalidate the homepage cache to show the new data
-      revalidatePath('/');
+      revalidatePath('/'); // Revalidate the homepage cache to show the new data
+      revalidatePath('/admin'); // Also revalidate admin page, in case any part of it depends on sheet data or for general refresh
       return { message: 'Data submitted successfully!', success: true };
     } else {
       return { message: 'Failed to submit data to Google Sheet. Please check the server console logs for more specific error details from the Google Sheets API.', success: false };
@@ -125,24 +122,14 @@ export async function saveSheetConfigAction(
 
     const configData: SheetConfigFormData = parsed.data;
 
-    // --- IMPORTANT LIMITATION ---
-    // We cannot dynamically update process.env variables for the running Node.js process.
-    // Environment variables are typically loaded at application startup.
-    // Modifying .env files programmatically is risky and requires app restarts.
-    // Therefore, this action primarily serves to VALIDATE the input format.
-    // The actual connection used by getSheetData/appendSheetRow will still rely on the
-    // environment variables set when the server process started.
-
     console.log('Received valid sheet configuration data (validation only):', {
         sheetId: configData.sheetId,
         sheetRange: configData.sheetRange,
         serviceAccountEmail: configData.serviceAccountEmail,
-        privateKey: '[REDACTED]', // Avoid logging the private key
+        privateKey: '[REDACTED]', 
     });
-
-    // Simulate saving - In a real scenario, this might write to a config file or DB,
-    // but that requires more infrastructure and careful handling.
-    // For now, just return success after validation.
+    
+    revalidatePath('/admin'); // Revalidate admin to reflect any UI changes potentially related to config.
 
     return {
         message: 'Configuration validated successfully. Remember to update environment variables and restart/redeploy the server for these changes to be used by the application backend.',
@@ -161,14 +148,14 @@ export async function testSheetConnectionAction(
   const missingEnvVars = [];
   if (!process.env.GOOGLE_SHEET_ID) missingEnvVars.push('GOOGLE_SHEET_ID');
   if (!process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL) missingEnvVars.push('GOOGLE_SERVICE_ACCOUNT_EMAIL');
-  if (!process.env.GOOGLE_PRIVATE_KEY) missingEnvVars.push('GOOGLE_PRIVATE_KEY');
-  if (!process.env.GOOGLE_SHEET_RANGE) missingEnvVars.push('GOOGLE_SHEET_RANGE'); // Though not strictly for client init, it's part of config
+  if (!process.env.GOOGLE_PRIVATE_KEY || process.env.GOOGLE_PRIVATE_KEY.trim() === '' || process.env.GOOGLE_PRIVATE_KEY.trim() === '""' || process.env.GOOGLE_PRIVATE_KEY.trim() === "''") missingEnvVars.push('GOOGLE_PRIVATE_KEY');
+  if (!process.env.GOOGLE_SHEET_RANGE) missingEnvVars.push('GOOGLE_SHEET_RANGE');
 
   if (missingEnvVars.length > 0) {
     return {
       success: false,
       message: 'Connection test failed: Server is missing required environment variables.',
-      details: `Missing: ${missingEnvVars.join(', ')}. Please ensure these are set in your .env.local file or hosting environment and the server is restarted.`,
+      details: `Missing: ${missingEnvVars.join(', ')}. Please ensure these are set in your .env.local file or hosting environment and the server is restarted. The private key must be the actual key, not an empty string.`,
     };
   }
 
@@ -177,18 +164,18 @@ export async function testSheetConnectionAction(
     return {
       success: false,
       message: 'Connection test failed: Could not initialize Google Sheets client.',
-      details: 'This usually indicates an issue with the service account credentials (email or private key format/value) or their parsing. Check server logs for more specific errors related to Google Auth initialization.',
+      details: 'This usually indicates an issue with the service account credentials (email or private key format/value) or their parsing. Check server logs for more specific errors related to Google Auth initialization. Ensure GOOGLE_PRIVATE_KEY is correctly formatted and not empty.',
     };
   }
 
   try {
-    // Perform a benign read operation to test the connection and permissions
     const response = await sheets.spreadsheets.get({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
-      fields: 'properties.title', // Requesting only the title is a lightweight check
+      fields: 'properties.title', 
     });
 
     if (response.status === 200 && response.data.properties?.title) {
+       revalidatePath('/admin'); // Revalidate on successful test
       return {
         success: true,
         message: 'Connection test successful!',
@@ -216,7 +203,9 @@ export async function testSheetConnectionAction(
     } else if (details.includes('Requested entity was not found')) {
         details = `Sheet Not Found. Verify that the GOOGLE_SHEET_ID ('${process.env.GOOGLE_SHEET_ID}') is correct and the sheet exists.`;
     } else if (details.includes('invalid_grant') || details.includes('Could not load the default credentials')) {
-        details = `Authentication Failed. This can be due to an invalid service account email, an incorrectly formatted or expired private key, or issues with the Google Cloud project setup.`;
+        details = `Authentication Failed. This can be due to an invalid service account email, an incorrectly formatted or expired private key, or issues with the Google Cloud project setup. Ensure GOOGLE_PRIVATE_KEY is valid.`;
+    } else if (error.message?.includes('error:1E08010C:DECODER routines::unsupported') || error.message?.includes('PEM routines') || error.message?.includes('private key')) {
+        details = `Private key format error. The GOOGLE_PRIVATE_KEY provided is likely malformed or not a valid PEM key. It should start with '-----BEGIN PRIVATE KEY-----' and end with '-----END PRIVATE KEY-----', with the key content in between. Original error: ${error.message}`;
     }
 
 
@@ -227,3 +216,4 @@ export async function testSheetConnectionAction(
     };
   }
 }
+
