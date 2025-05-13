@@ -1,10 +1,9 @@
-
 import { Suspense } from 'react';
 import type { SheetRow } from '../lib/types';
 import { getSheetData } from '@/lib/sheets';
 import { DashboardTable } from '@/components/dashboard-table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { InfoIcon, ServerCrash } from 'lucide-react';
+import { InfoIcon, ServerCrash, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 // Helper component for loading skeleton
@@ -46,24 +45,35 @@ function TableSkeleton() {
 
 // DashboardData is a Server Component to fetch data
 async function DashboardData() {
-  let tableData: SheetRow[] = [];
-  let errorOccurred = false;
-  let errorMessage = "The dashboard is currently displaying with no live data. Data fetching from Google Sheets is disabled to ensure the application loads. To enable live data, please ensure correct Google Sheets API configuration and re-enable data fetching logic in the application code.";
+  let tableData: SheetRow[] = []; // Default to empty array
+  let errorOccurred = false; // General API or unexpected error
+  let isConfigError = false; // Specific flag for configuration errors
+  let userFriendlyMessage = "Live data from Google Sheet. Use the filter input to search across all columns. Click column headers to sort.";
 
   try {
     // console.log("[Page:DashboardData SC] Attempting to fetch data.");
-    const data = await getSheetData();
-    tableData = Array.isArray(data) ? data : [];
-    if (tableData.length > 0) {
-        errorMessage = "Live data from Google Sheet. Use the filter input to search across all columns. Click column headers to sort.";
+    const dataResult = await getSheetData(); // Can be SheetRow[] or null
+
+    if (dataResult === null) {
+      isConfigError = true;
+      // This message is critical. Server logs from [SheetLib:] will have the specifics.
+      userFriendlyMessage = "CRITICAL CONFIGURATION ERROR: Could not connect to Google Sheets. Please ensure GOOGLE_SHEET_ID, GOOGLE_SERVICE_ACCOUNT_EMAIL, and a valid GOOGLE_PRIVATE_KEY are correctly set in your environment variables and the server has been restarted. Check server logs for '[SheetLib:]' messages for details.";
+      tableData = []; // Ensure tableData is an array for DashboardTable
     } else {
-        errorMessage = "No data available in the Google Sheet, or the sheet is empty. Please check the sheet and API configuration if you expect data.";
+      tableData = Array.isArray(dataResult) ? dataResult : [];
+      if (tableData.length === 0) {
+        // This case means API call was successful, but no data rows returned.
+        // Or, an API error occurred after client init, and getSheetData returned [].
+        userFriendlyMessage = "No data available in the Google Sheet, or the sheet is empty. If this is unexpected, please verify the sheet contents and the API configuration (Sheet ID, Range, Permissions) in the admin panel or server logs if an API error was logged by [SheetLib:getSheetData].";
+        // We don't set errorOccurred = true here unless we know an API error happened.
+        // Checking server logs is important if this state is unexpected.
+      }
     }
-  } catch (error: any) {
-    console.error("[Page:DashboardData SC] Failed to fetch data:", error);
-    errorOccurred = true;
-    tableData = []; // Ensure tableData is an array on error
-    errorMessage = `Error fetching data: ${error.message || 'Unknown error'}. Please check server logs and API configuration.`;
+  } catch (error: any) { // Catch any other unexpected throws (should be rare with new getSheetData)
+    console.error("[Page:DashboardData SC] Unexpected error during data fetching:", error);
+    errorOccurred = true; // Mark as a general error
+    userFriendlyMessage = `An unexpected error occurred while fetching data: ${error.message || 'Unknown error'}. Please check server logs.`;
+    tableData = []; // Ensure tableData is an array
   }
 
   return (
@@ -74,40 +84,52 @@ async function DashboardData() {
           Dashboard View
         </CardTitle>
          <CardDescription>
-          {errorMessage}
+          {userFriendlyMessage}
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {errorOccurred && (
+        {isConfigError && (
+             <div className="my-4 p-4 border border-destructive/50 rounded-md bg-destructive/10">
+                <div className="flex items-center gap-3 text-destructive">
+                    <AlertTriangle className="h-8 w-8" />
+                    <div>
+                        <p className="font-semibold">Configuration Error</p>
+                        <p className="text-sm">
+                           {userFriendlyMessage} {/* Display the detailed config error message */}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        )}
+        {errorOccurred && !isConfigError && ( // General error, not config related
              <div className="my-4 p-4 border border-destructive/20 rounded-md bg-destructive/10">
                 <div className="flex items-center gap-3 text-destructive">
                     <ServerCrash className="h-8 w-8" />
                     <div>
                         <p className="font-semibold">Error Fetching Data</p>
                         <p className="text-sm">
-                            Could not load data from Google Sheets. Please verify your API configuration in the admin panel and ensure the server can connect to Google Sheets. Check server logs for details.
+                            {userFriendlyMessage} {/* Display the general error message */}
                         </p>
                     </div>
                 </div>
             </div>
         )}
-        {/* Display this message only if no error occurred but data is empty */}
-        {(!tableData || tableData.length === 0) && !errorOccurred && (
+        {/* Display message if no config error, no general error, but data is empty */}
+        {tableData.length === 0 && !isConfigError && !errorOccurred && (
              <div className="my-4 p-4 border border-dashed border-border rounded-md bg-muted/50">
                 <div className="flex items-center gap-3 text-muted-foreground">
-                    <ServerCrash className="h-8 w-8 text-destructive" />
+                    <InfoIcon className="h-8 w-8 text-blue-500" />
                     <div>
-                        <p className="font-semibold text-card-foreground">Data Display Notice</p>
+                        <p className="font-semibold text-card-foreground">No Data to Display</p>
                         <p className="text-sm">
-                            The dashboard is currently displaying with no live data.
-                            This may be due to missing or incorrect Google Sheets API configuration on the server (check <code className="font-mono text-xs bg-destructive/20 p-0.5 rounded">.env.local</code> and restart the server), the sheet itself might be empty, or data fetching is intentionally disabled.
-                            Please ensure the Google Sheet connection is correctly set up in the Admin panel and that data fetching logic is enabled if it was previously commented out.
+                           {userFriendlyMessage}
                         </p>
                     </div>
                 </div>
             </div>
         )}
          <div className="mt-6">
+            {/* DashboardTable expects initialData to be SheetRow[] */}
             <DashboardTable initialData={tableData} />
         </div>
       </CardContent>

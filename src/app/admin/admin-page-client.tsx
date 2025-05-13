@@ -6,14 +6,14 @@ import { SheetConfigForm } from '@/components/sheet-config-form';
 import { LogoutButton } from '@/components/logout-button';
 import { ConnectionTester } from '@/components/connection-tester';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { TestTubeDiagonal, Eye, EyeOff, LayoutGrid, Settings, Table as TableIcon, ServerCrash, InfoIcon } from 'lucide-react';
+import { TestTubeDiagonal, Eye, EyeOff, LayoutGrid, Settings, Table as TableIcon, ServerCrash, InfoIcon, AlertTriangle } from 'lucide-react';
 import { LoginForm } from '@/components/login-form';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from '@/components/ui/separator';
 import { DashboardTable } from '@/components/dashboard-table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getSheetData } from '@/lib/sheets'; // Restored import
+import { getSheetData } from '@/lib/sheets'; 
 import type { SheetRow } from '../../lib/types';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
@@ -59,24 +59,51 @@ function AdminTableSkeleton() {
   );
 }
 
-// This component now attempts to fetch data again.
-// It is an async component. If called directly from AdminPageClient (a 'use client' component),
-// it will cause an "async Client Component" error.
-// This should ideally be refactored or used in a Server Component context.
+
 async function AdminDashboardDisplayWrapper() {
-  // console.log("[AdminPageClient:AdminDashboardDisplayWrapper SC] Attempting to fetch data for admin dashboard.");
-  let data: SheetRow[] = [];
-  let errorOccurred = false;
+  let tableData: SheetRow[] = []; // Default to empty array
+  let errorOccurred = false; // General API or unexpected error
+  let isConfigError = false; // Specific flag for configuration errors
+  let userFriendlyMessage = "Live Dashboard Preview from Google Sheet.";
+
+
   try {
-    const fetchedData = await getSheetData();
-    data = Array.isArray(fetchedData) ? fetchedData : [];
-  } catch (error) {
-    console.error("[AdminPageClient:AdminDashboardDisplayWrapper SC] Failed to fetch data for admin dashboard:", error);
-    data = []; // Ensure data is an array on error
+    const dataResult = await getSheetData(); // Can be SheetRow[] or null
+
+    if (dataResult === null) {
+      isConfigError = true;
+      userFriendlyMessage = "CRITICAL CONFIGURATION ERROR: Could not initialize Google Sheets client for preview. Please ensure GOOGLE_SHEET_ID, GOOGLE_SERVICE_ACCOUNT_EMAIL, and a valid GOOGLE_PRIVATE_KEY are correctly set in your environment variables and the server has been restarted. Check server logs for '[SheetLib:]' messages for specific details.";
+      tableData = [];
+    } else {
+      tableData = Array.isArray(dataResult) ? dataResult : [];
+      if (tableData.length === 0) {
+        userFriendlyMessage = "No data available in the Google Sheet for preview, or the sheet is empty. If this is unexpected, verify the sheet contents and API configuration (Sheet ID, Range, Permissions). Check server logs if an API error was logged by [SheetLib:getSheetData].";
+      }
+    }
+  } catch (error: any) { // Catch any other unexpected throws (should be rare)
+    console.error("[AdminPageClient:AdminDashboardDisplayWrapper SC] Unexpected error fetching data for admin dashboard:", error);
     errorOccurred = true;
+    userFriendlyMessage = `An unexpected error occurred while fetching preview data: ${error.message || 'Unknown error'}. Check server logs.`;
+    tableData = [];
+  }
+  
+  if (isConfigError) {
+    return (
+        <div className="my-4 p-4 border border-destructive/50 rounded-md bg-destructive/10">
+            <div className="flex items-center gap-3 text-destructive">
+                <AlertTriangle className="h-8 w-8" />
+                <div>
+                    <p className="font-semibold">Configuration Error Loading Preview</p>
+                    <p className="text-sm">
+                        {userFriendlyMessage}
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
   }
 
-  if (errorOccurred) {
+  if (errorOccurred) { // General error, not config related
     return (
         <div className="my-4 p-4 border border-destructive/20 rounded-md bg-destructive/10">
             <div className="flex items-center gap-3 text-destructive">
@@ -84,7 +111,7 @@ async function AdminDashboardDisplayWrapper() {
                 <div>
                     <p className="font-semibold">Error Fetching Dashboard Preview Data</p>
                     <p className="text-sm">
-                        Could not load data from Google Sheets for the preview. Please verify your API configuration and connection. Check server logs.
+                        {userFriendlyMessage}
                     </p>
                 </div>
             </div>
@@ -92,7 +119,7 @@ async function AdminDashboardDisplayWrapper() {
     );
   }
   
-  if (data.length === 0 && !errorOccurred) {
+  if (tableData.length === 0 && !isConfigError && !errorOccurred) {
     return (
          <div className="my-4 p-4 border border-dashed border-border rounded-md bg-muted/50">
             <div className="flex items-center gap-3 text-muted-foreground">
@@ -100,8 +127,7 @@ async function AdminDashboardDisplayWrapper() {
                 <div>
                     <p className="font-semibold text-card-foreground">No Data for Preview</p>
                     <p className="text-sm">
-                        The Google Sheet appears to be empty or no data was returned for the preview.
-                        If this is unexpected, please check the sheet and your API configuration.
+                       {userFriendlyMessage}
                     </p>
                 </div>
             </div>
@@ -109,7 +135,7 @@ async function AdminDashboardDisplayWrapper() {
     );
   }
 
-  return <DashboardTable initialData={data} />;
+  return <DashboardTable initialData={tableData} />;
 }
 
 
@@ -187,7 +213,7 @@ export default function AdminPageClient({ initialLoggedIn }: AdminPageClientProp
                            <InfoIcon className="h-5 w-5 text-blue-500 mt-0.5 shrink-0" />
                            <span>
                              View the current data from the Google Sheet. This is a read-only preview.
-                             If data fetching fails, an error message will be displayed. Ensure Google Sheets API configuration is correct.
+                             If data fetching fails (e.g. due to configuration issues or API errors), an informative message will be displayed. Ensure Google Sheets API configuration is correct and the server is properly set up.
                            </span>
                         </CardDescription>
                     </CardHeader>
@@ -254,3 +280,4 @@ export default function AdminPageClient({ initialLoggedIn }: AdminPageClientProp
     </div>
   );
 }
+
