@@ -1,4 +1,3 @@
-
 'use client'; 
 
 import { Suspense, useState, useEffect } from 'react';
@@ -58,11 +57,11 @@ function DashboardDataWrapper() {
     setIsMounted(true);
     // To enable actual data fetching from Google Sheets (via a Server Action),
     // you would uncomment and implement the following:
-    // import { getSheetData } from '@/lib/sheets'; // This import itself is problematic if sheets.ts is not purely server-side for types.
+    // import { getSheetData } from '@/lib/sheets'; 
     // async function fetchData() {
     //   try {
     //     // const data = await getSheetData(); // Call the Server Action
-    //     // setTableData(data || []);
+    //     // setTableData(data || []); // Ensure data is an array
     //     // console.log("[Page:DashboardDataWrapper CC] Data fetched (or attempted).");
     //   } catch (error) {
     //     // console.error("[Page:DashboardDataWrapper CC] Failed to fetch data client-side:", error);
@@ -90,23 +89,23 @@ function DashboardDataWrapper() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {(tableData === null || tableData.length === 0) && ( // Check for null as well
+        {(tableData === null || tableData.length === 0) && ( 
              <div className="my-4 p-4 border border-dashed border-border rounded-md bg-muted/50">
                 <div className="flex items-center gap-3 text-muted-foreground">
                     <ServerCrash className="h-8 w-8 text-destructive" />
                     <div>
-                        <p className="font-semibold text-card-foreground">Data Display Note</p>
+                        <p className="font-semibold text-card-foreground">Data Display Notice</p>
                         <p className="text-sm">
-                            The dashboard is currently displaying with no data or sample data.
-                            Full data fetching from Google Sheets is dependent on server configuration and might be disabled for debugging.
-                            If you expect to see live data, please ensure the Google Sheet connection is correctly set up in the Admin panel and that data fetching is enabled in the code.
+                            The dashboard is currently displaying with no live data.
+                            This may be due to missing or incorrect Google Sheets API configuration on the server (check <code className="font-mono text-xs bg-destructive/20 p-0.5 rounded">.env.local</code> and restart the server), or the sheet itself might be empty.
+                            Please ensure the Google Sheet connection is correctly set up in the Admin panel using the "Connection Test" and that data fetching logic is enabled if it was previously commented out for debugging.
                         </p>
                     </div>
                 </div>
             </div>
         )}
          <div className="mt-6">
-            {/* Pass an empty array if tableData is null to prevent errors in DashboardTable */}
+            {/* Pass an empty array if tableData is null/undefined to prevent errors in DashboardTable */}
             <DashboardTable initialData={tableData || []} /> 
         </div>
       </CardContent>
@@ -129,7 +128,7 @@ export default function Home() {
   );
 }
 
-// Using force-dynamic to ensure the page is re-evaluated on each request,
-// which can be helpful if underlying data changes frequently.
-// However, for diagnosing black screen issues, this is less critical than client-side errors.
+// Using force-dynamic can be helpful if underlying data changes frequently.
+// However, for diagnosing blank screen issues, client-side error handling and
+// robust server-side data fetching (to avoid SSR crashes) are more critical.
 export const dynamic = 'force-dynamic';

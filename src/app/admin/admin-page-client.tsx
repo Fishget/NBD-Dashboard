@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
@@ -7,7 +6,7 @@ import { SheetConfigForm } from '@/components/sheet-config-form';
 import { LogoutButton } from '@/components/logout-button';
 import { ConnectionTester } from '@/components/connection-tester';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { TestTubeDiagonal, Eye, EyeOff, LayoutGrid, Settings, Table as TableIcon, ServerCrash } from 'lucide-react';
+import { TestTubeDiagonal, Eye, EyeOff, LayoutGrid, Settings, Table as TableIcon, ServerCrash, InfoIcon } from 'lucide-react';
 import { LoginForm } from '@/components/login-form';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -64,13 +63,31 @@ function AdminTableSkeleton() {
 async function AdminDashboardDisplayWrapper() {
   let data: SheetRow[] = [];
   let errorFetchingData = false;
+  let errorMessage = "Could not fetch data from Google Sheets. Please check server logs and connection settings.";
+
   try {
     // getSheetData should return [] if config is bad or API call fails.
     // It should not throw an error that crashes this Server Component.
     data = await getSheetData(); 
+    if (data === null || data.length === 0) {
+        // This case means getSheetData executed but returned no data.
+        // This could be due to an empty sheet OR a configuration issue silently handled in getSheetData.
+        // We want to provide a more specific message if possible.
+        // Checking if env vars are set as a proxy for "is config likely an issue?"
+        const envVarsLikelyMissing = !(process.env.GOOGLE_SHEET_ID && process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && process.env.GOOGLE_PRIVATE_KEY);
+        if (envVarsLikelyMissing) {
+            errorMessage = "Dashboard preview is empty. This is likely due to missing or incorrect Google Sheets API credentials on the server (e.g., in .env.local). Please configure and test the connection in the 'Sheet Configuration' tab and restart the server.";
+            errorFetchingData = true; // Treat as an error for display purposes
+        } else {
+            // Config seems to be there, so maybe the sheet is just empty or getSheetData filtered everything.
+            // DashboardTable will show "No data available..." in this case if data is indeed [].
+            // No explicit error message here unless data is explicitly null from a severe failure.
+        }
+    }
   } catch (e: any) {
-    // This catch block is a fallback, ideally getSheetData handles its own errors.
-    console.error("AdminDashboardDisplayWrapper: Critical error calling getSheetData:", e.message);
+    // This catch block is a fallback, ideally getSheetData handles its own errors and returns [].
+    console.error("AdminDashboardDisplayWrapper: Critical error during getSheetData call:", e.message, e.stack);
+    errorMessage = `A critical error occurred while trying to fetch sheet data: ${e.message}. Check server logs for more details.`;
     errorFetchingData = true; 
     data = []; // Ensure data is an empty array on error
   }
@@ -83,15 +100,16 @@ async function AdminDashboardDisplayWrapper() {
           <div>
             <p className="font-semibold">Error Loading Dashboard Preview</p>
             <p className="text-sm">
-              Could not fetch data from Google Sheets due to an API or configuration error. Please check server logs and connection settings.
+              {errorMessage}
             </p>
           </div>
         </div>
       </div>
     );
   }
-  // If data is empty due to config issues or no data in sheet, DashboardTable will show "No data available..."
-  return <DashboardTable initialData={data} />;
+  // If data is empty due to an empty sheet (and config is okay), DashboardTable will show "No data available..."
+  // Pass empty array if data is null for any reason to prevent DashboardTable errors.
+  return <DashboardTable initialData={data || []} />;
 }
 
 
@@ -134,7 +152,7 @@ export default function AdminPageClient({ initialLoggedIn }: AdminPageClientProp
         <TabsList className="grid w-full grid-cols-2 md:w-[400px]">
           <TabsTrigger value="data-entry">
             <LayoutGrid className="mr-2 h-4 w-4" />
-            Data Entry & View
+            Data Entry &amp; View
           </TabsTrigger>
           <TabsTrigger value="configuration">
             <Settings className="mr-2 h-4 w-4" />
@@ -165,7 +183,14 @@ export default function AdminPageClient({ initialLoggedIn }: AdminPageClientProp
                 <Card>
                     <CardHeader>
                         <CardTitle>Live Dashboard Preview</CardTitle>
-                        <CardDescription>View the current data from the Google Sheet. This is a read-only preview. If data is not shown, check connection settings.</CardDescription>
+                        <CardDescription className="flex items-start gap-2">
+                           <InfoIcon className="h-5 w-5 text-blue-500 mt-0.5 shrink-0" />
+                           <span>
+                             View the current data from the Google Sheet. This is a read-only preview. 
+                             If data is not shown or an error appears, it may indicate issues with the Google Sheets API configuration (e.g., in <code className="font-mono text-xs bg-muted p-0.5 rounded">.env.local</code>) or that the sheet is empty. 
+                             Use the 'Sheet Configuration' tab to verify settings.
+                           </span>
+                        </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Suspense fallback={<AdminTableSkeleton />}>
