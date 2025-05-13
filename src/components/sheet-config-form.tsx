@@ -1,53 +1,98 @@
+
 'use client';
 
-import { useActionState } from 'react'; // Correct import for useActionState
+import { useActionState, useEffect, useState } from 'react'; // Correct import for useActionState
 import { useFormStatus } from 'react-dom'; // Correct import for useFormStatus
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { saveSheetConfigAction, type FormState } from '@/lib/actions';
 import { sheetConfigSchema, type SheetConfigFormData } from '@/lib/validators';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, Settings, Info } from 'lucide-react';
-import { useEffect } from 'react';
+import { Terminal, Settings, Info, FileText, ClipboardCopy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
     <Button type="submit" disabled={pending}>
-      {pending ? 'Saving...' : 'Save Configuration'}
+      {pending ? 'Validating...' : 'Validate & Save Configuration'}
     </Button>
   );
 }
 
 export function SheetConfigForm() {
-  // Note: We can't reliably read current env vars client-side after build.
-  // Default values are empty or standard defaults.
   const defaultValues = {
     sheetId: '',
-    sheetRange: 'Sheet1!A:E', // Default range
+    sheetRange: 'Sheet1!A:E',
     serviceAccountEmail: '',
     privateKey: '',
   };
 
-  // Initialize form state for the config form action
   const [state, formAction] = useActionState<FormState | null, FormData>(saveSheetConfigAction, null);
   const { toast } = useToast();
+  const [envPreviewContent, setEnvPreviewContent] = useState('');
 
   const form = useForm<SheetConfigFormData>({
     resolver: zodResolver(sheetConfigSchema),
     defaultValues: defaultValues,
-    // Fetch current values on mount if possible/needed, though generally discouraged for env vars
-    // This example keeps defaults empty for security and clarity.
   });
 
-   // Display toast message on state change
+  const watchedValues = useWatch({ control: form.control });
+
+  useEffect(() => {
+    const { sheetId, sheetRange, serviceAccountEmail, privateKey: formPrivateKey } = watchedValues;
+
+    let envFormattedPrivateKey: string;
+    if (formPrivateKey && typeof formPrivateKey === 'string' && formPrivateKey.trim()) {
+      const escapedKey = formPrivateKey.trim().replace(/\n/g, '\\n');
+      envFormattedPrivateKey = `"${escapedKey}"`;
+    } else {
+      envFormattedPrivateKey = '"-----BEGIN PRIVATE KEY-----\\nYOUR_PRIVATE_KEY_LINE_1\\nYOUR_PRIVATE_KEY_LINE_2\\n-----END PRIVATE KEY-----"';
+    }
+
+    const adminUsername = 'admin'; // Placeholder or fetch from actual env if needed for display
+    const adminPassword = 'password'; // Placeholder
+
+    const content = `
+# Google Sheets API Credentials
+GOOGLE_SHEET_ID=${sheetId || 'your_google_sheet_id_here'}
+GOOGLE_SHEET_RANGE=${sheetRange || 'Sheet1!A:E'}
+GOOGLE_SERVICE_ACCOUNT_EMAIL=${serviceAccountEmail || 'your-service-account-email@your-project-id.iam.gserviceaccount.com'}
+# The private key below should be a single line in your .env.local file,
+# with actual newline characters represented as \\n, all enclosed in double quotes.
+# Example: GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\\nYOUR_KEY_PART_1\\nYOUR_KEY_PART_2\\n-----END PRIVATE KEY-----"
+GOOGLE_PRIVATE_KEY=${envFormattedPrivateKey}
+
+# Admin Credentials for the Dashboard
+ADMIN_USERNAME=${adminUsername}
+ADMIN_PASSWORD=${adminPassword}
+`;
+    setEnvPreviewContent(content.trim());
+  }, [watchedValues]);
+
+  const handleCopyToClipboard = () => {
+    if (!envPreviewContent) return;
+    navigator.clipboard.writeText(envPreviewContent)
+      .then(() => {
+        toast({
+          title: "Copied to clipboard!",
+          description: "You can now paste this into your .env.local file.",
+        });
+      })
+      .catch(err => {
+        toast({
+          title: "Copy failed",
+          description: "Could not copy to clipboard. Please copy manually.",
+          variant: "destructive",
+        });
+      });
+  };
+
   useEffect(() => {
     if (state?.message) {
       toast({
@@ -55,14 +100,8 @@ export function SheetConfigForm() {
         description: state.message,
         variant: state.success ? 'default' : 'destructive',
       });
-      // We don't reset the form here as users might want to see the values they entered.
     }
   }, [state, toast]);
-
-  // Effect to load current values (if needed, for display only) - This is tricky with env vars.
-  // For this example, we assume users enter fresh values or know the existing ones.
-  // A server component fetching initial values and passing them as props would be needed
-  // for a robust "edit existing" experience, but that reveals env vars to the client props.
 
   return (
     <Card className="w-full max-w-2xl">
@@ -72,10 +111,10 @@ export function SheetConfigForm() {
           Google Sheet Configuration
         </CardTitle>
         <CardDescription>
-          Enter the connection details for your Google Sheet. These settings are typically managed via environment variables. Saving here primarily validates the format.
+          Enter the connection details for your Google Sheet. These settings are validated here.
+          Generate the content for your <code className="font-mono bg-muted px-1 py-0.5 rounded">.env.local</code> file below, then save this configuration.
         </CardDescription>
       </CardHeader>
-      {/* Display general error message if validation fails without specific field errors */}
       {!state?.success && state?.message && !state.errors && (
         <CardContent>
           <Alert variant="destructive">
@@ -87,13 +126,13 @@ export function SheetConfigForm() {
       )}
       <Form {...form}>
         <form action={formAction}>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6"> {/* Increased spacing for new section */}
             <FormField
               control={form.control}
               name="sheetId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Sheet ID (`GOOGLE_SHEET_ID`)</FormLabel>
+                  <FormLabel>Sheet ID (<code className="font-mono text-xs">GOOGLE_SHEET_ID</code>)</FormLabel>
                   <FormControl>
                     <Input placeholder="Enter Google Sheet ID" {...field} />
                   </FormControl>
@@ -110,7 +149,7 @@ export function SheetConfigForm() {
               name="sheetRange"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Data Range (`GOOGLE_SHEET_RANGE`)</FormLabel>
+                  <FormLabel>Data Range (<code className="font-mono text-xs">GOOGLE_SHEET_RANGE</code>)</FormLabel>
                   <FormControl>
                     <Input placeholder="e.g., Sheet1!A:E" {...field} />
                   </FormControl>
@@ -130,7 +169,7 @@ export function SheetConfigForm() {
               name="serviceAccountEmail"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Service Account Email (`GOOGLE_SERVICE_ACCOUNT_EMAIL`)</FormLabel>
+                  <FormLabel>Service Account Email (<code className="font-mono text-xs">GOOGLE_SERVICE_ACCOUNT_EMAIL</code>)</FormLabel>
                   <FormControl>
                     <Input placeholder="Enter service account email" {...field} />
                   </FormControl>
@@ -147,7 +186,7 @@ export function SheetConfigForm() {
               name="privateKey"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Private Key (`GOOGLE_PRIVATE_KEY`)</FormLabel>
+                  <FormLabel>Private Key (<code className="font-mono text-xs">GOOGLE_PRIVATE_KEY</code>)</FormLabel>
                   <FormControl>
                     <Textarea placeholder="Paste the service account private key here (starts with -----BEGIN PRIVATE KEY-----)" {...field} rows={6} />
                   </FormControl>
@@ -164,13 +203,46 @@ export function SheetConfigForm() {
               )}
             />
 
+            {/* .env.local Preview Section */}
+            <Card className="shadow-md">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg"> {/* Slightly smaller title */}
+                  <FileText className="h-5 w-5" />
+                  Preview for <code className="font-mono bg-muted px-1.5 py-1 rounded">.env.local</code>
+                </CardTitle>
+                <CardDescription>
+                  Based on the values entered above, copy the content below and paste it into your <code className="font-mono bg-muted px-1 py-0.5 rounded">.env.local</code> file in the project root.
+                  After updating the file, you must restart your Next.js development server.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="relative rounded-md bg-muted/80 dark:bg-muted/50 p-4 border">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleCopyToClipboard}
+                    className="absolute top-2 right-2 text-xs"
+                    aria-label="Copy .env.local content"
+                    disabled={!envPreviewContent}
+                  >
+                    <ClipboardCopy className="h-3.5 w-3.5 mr-1.5" />
+                    Copy
+                  </Button>
+                  <pre className="text-xs whitespace-pre-wrap break-all font-mono">
+                    {envPreviewContent || 'Enter values in the form to generate the .env.local content preview...'}
+                  </pre>
+                </div>
+              </CardContent>
+            </Card>
+
              <Alert variant="default">
                 <Info className="h-4 w-4" />
                 <AlertTitle>Configuration Persistence</AlertTitle>
                 <AlertDescription>
-                    Saving these settings will validate them, but the application primarily relies on **environment variables** set during deployment (e.g., in `.env.local` or hosting provider settings).
+                    Validating and saving these settings confirms their format. However, the application backend primarily relies on **environment variables** set during startup (e.g., in <code className="font-mono bg-muted px-1 py-0.5 rounded">.env.local</code> or hosting provider settings).
                     <br /><br />
-                    For changes to take permanent effect and be used by the application backend, you usually need to update the environment variables and **restart or redeploy** the application. This form does not directly modify those underlying environment variables.
+                    For these changes to be used by the application, you **must** manually update your <code className="font-mono bg-muted px-1 py-0.5 rounded">.env.local</code> file (using the preview above) and then **restart or redeploy** your application.
                 </AlertDescription>
              </Alert>
 
@@ -183,4 +255,3 @@ export function SheetConfigForm() {
     </Card>
   );
 }
-
