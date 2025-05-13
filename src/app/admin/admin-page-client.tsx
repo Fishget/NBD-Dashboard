@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
@@ -7,14 +6,16 @@ import { SheetConfigForm } from '@/components/sheet-config-form';
 import { LogoutButton } from '@/components/logout-button';
 import { ConnectionTester } from '@/components/connection-tester';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { TestTubeDiagonal, Eye, EyeOff, LayoutGrid, Settings, Table as TableIcon } from 'lucide-react';
+import { TestTubeDiagonal, Eye, EyeOff, LayoutGrid, Settings, Table as TableIcon, ChevronDown, ChevronUp } from 'lucide-react';
 import { LoginForm } from '@/components/login-form';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from '@/components/ui/separator';
 import { DashboardTable } from '@/components/dashboard-table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getSheetData } from '@/lib/sheets';
+import { getSheetData } from '@/lib/sheets'; // Server action
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+
 
 interface AdminPageClientProps {
   initialLoggedIn: boolean;
@@ -57,8 +58,11 @@ function AdminTableSkeleton() {
   );
 }
 
-// Data fetching component wrapped for Suspense for Admin Dashboard
-async function AdminDashboardDisplay() {
+// This component fetches data on the server and passes it to DashboardTable
+// It must be an async Server Component or be called from one.
+// Here, we'll assume it's intended to be part of the server-rendered output
+// when the admin page loads, so it's okay for it to be async.
+async function AdminDashboardDisplayWrapper() {
   const data = await getSheetData();
   return <DashboardTable initialData={data} />;
 }
@@ -100,22 +104,18 @@ export default function AdminPageClient({ initialLoggedIn }: AdminPageClientProp
       </div>
 
       <Tabs defaultValue="data-entry" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 md:w-[600px]">
+        <TabsList className="grid w-full grid-cols-2 md:w-[400px]">
           <TabsTrigger value="data-entry">
             <LayoutGrid className="mr-2 h-4 w-4" />
-            Data Entry
+            Data Entry & View
           </TabsTrigger>
           <TabsTrigger value="configuration">
             <Settings className="mr-2 h-4 w-4" />
             Sheet Configuration
           </TabsTrigger>
-          <TabsTrigger value="view-dashboard">
-            <TableIcon className="mr-2 h-4 w-4" />
-            View Dashboard
-          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="data-entry" className="mt-6">
+        <TabsContent value="data-entry" className="mt-6 space-y-8">
           <Card>
             <CardHeader>
               <CardTitle>Add New Entry</CardTitle>
@@ -125,6 +125,32 @@ export default function AdminPageClient({ initialLoggedIn }: AdminPageClientProp
               <AdminForm />
             </CardContent>
           </Card>
+          
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="dashboard-preview">
+              <AccordionTrigger>
+                <div className="flex items-center gap-2 text-lg font-semibold">
+                    <TableIcon className="h-5 w-5" />
+                    <span>Dashboard Preview</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Live Dashboard Preview</CardTitle>
+                        <CardDescription>View the current data from the Google Sheet. This is a read-only preview.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Suspense fallback={<AdminTableSkeleton />}>
+                            {/* AdminDashboardDisplayWrapper is an async component, it's fine here inside Suspense */}
+                            <AdminDashboardDisplayWrapper />
+                        </Suspense>
+                    </CardContent>
+                </Card>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+
         </TabsContent>
 
         <TabsContent value="configuration" className="mt-6 space-y-8">
@@ -173,20 +199,6 @@ export default function AdminPageClient({ initialLoggedIn }: AdminPageClientProp
               )}
             </CardContent>
           </Card>
-        </TabsContent>
-
-        <TabsContent value="view-dashboard" className="mt-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Dashboard Preview</CardTitle>
-                    <CardDescription>View the current data from the Google Sheet.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Suspense fallback={<AdminTableSkeleton />}>
-                        <AdminDashboardDisplay />
-                    </Suspense>
-                </CardContent>
-            </Card>
         </TabsContent>
       </Tabs>
     </div>

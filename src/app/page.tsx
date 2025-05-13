@@ -1,8 +1,10 @@
-
 import { Suspense } from 'react';
-import { getSheetData } from '@/lib/sheets';
+import { getSheetData, type SheetRow } from '@/lib/sheets';
 import { DashboardTable } from '@/components/dashboard-table';
 import { Skeleton } from '@/components/ui/skeleton';
+import { AlertTriangle } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
 
 // Helper component for loading skeleton
 function TableSkeleton() {
@@ -43,9 +45,47 @@ function TableSkeleton() {
 
 // Data fetching component wrapped for Suspense
 async function DashboardData() {
-  // Add a small delay to simulate network latency if needed for testing skeleton
-  // await new Promise(resolve => setTimeout(resolve, 1000));
-  const data = await getSheetData();
+  let data: SheetRow[] = [];
+  let errorOccurred = false;
+  let errorMessage = '';
+
+  try {
+    // console.log("Home page: Attempting to fetch dashboard data...");
+    data = await getSheetData();
+    // console.log(`Home page: Successfully fetched ${data.length} rows.`);
+    if (data.length === 0) {
+      // This could be due to an empty sheet or an error handled in getSheetData returning []
+      // console.log("Home page: getSheetData returned 0 rows. This might indicate an issue with sheet access or an empty sheet.");
+    }
+  } catch (error: any) {
+    errorOccurred = true;
+    errorMessage = error.message || 'An unknown error occurred while fetching data.';
+    console.error("Home page: CRITICAL error during getSheetData call:", error);
+    // `getSheetData` is designed to catch its internal errors and return [],
+    // so this catch block here is for unexpected errors if `getSheetData` itself throws.
+  }
+
+  if (errorOccurred) {
+    return (
+      <Card className="border-destructive">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-destructive">
+            <AlertTriangle />
+            Error Loading Dashboard Data
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p>There was a problem fetching data from Google Sheets.</p>
+          <p className="text-sm text-muted-foreground mt-2">Details: {errorMessage}</p>
+          <p className="text-sm text-muted-foreground mt-2">
+            Please check the server logs for more specific error messages related to Google Sheets API connectivity or authentication.
+            Common issues include incorrect API credentials in <code className="font-mono bg-muted px-1 py-0.5 rounded">.env.local</code> (GOOGLE_SHEET_ID, GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY), or the service account not having permissions for the sheet.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+  
   return <DashboardTable initialData={data} />;
 }
 
@@ -63,6 +103,7 @@ export default function Home() {
   );
 }
 
-// Ensure dynamic rendering as data comes from an external source
+// Ensure dynamic rendering as data comes from an external source and to reflect any auth changes.
 export const dynamic = 'force-dynamic';
-export const revalidate = 60; // Optional: Revalidate cache every 60 seconds
+// Optional: Revalidate cache periodically if data changes frequently and force-dynamic isn't sufficient.
+// export const revalidate = 60; 
