@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { InfoIcon, ServerCrash, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { RefreshButton } from '@/components/refresh-button'; 
+import { cn } from '@/lib/utils'; // Added import for cn
 
 // Helper component for loading skeleton
 function TableSkeleton() {
@@ -64,7 +65,7 @@ async function DashboardData() {
       if (tableData.length === 0) {
         userFriendlyMessage = "No data available in the Google Sheet, or the sheet is empty. If this is unexpected, please verify the sheet contents and the API configuration (Sheet ID, Range, Permissions) in the admin panel or server logs if an API error was logged by [SheetLib:getSheetData].";
       } else {
-        userFriendlyMessage = "Live Data from Google Sheet. Use the filter input to search across all columns. Click column headers to sort."
+        userFriendlyMessage = "Live Data"
       }
     }
   } catch (error: any) { 
@@ -80,10 +81,7 @@ async function DashboardData() {
     <Card className="my-8 shadow-md">
       <CardHeader>
         <div className="flex justify-between items-center">
-          <CardTitle className="flex items-center gap-2 text-primary">
-            <InfoIcon className="h-6 w-6" />
-            Dashboard View
-          </CardTitle>
+          {/* Removed CardTitle as per implicit request to remove NBD Dashboard text */}
           <RefreshButton /> 
         </div>
          <CardDescription className={cn("text-primary", isSuccessWithData ? "text-primary" : "text-muted-foreground")}>
@@ -141,7 +139,6 @@ async function DashboardData() {
 export default function Home() {
   return (
     <div className="space-y-6">
-      {/* Removed H1 and P tags as per user request */}
       <Suspense fallback={<TableSkeleton />}>
         <DashboardData />
       </Suspense>
