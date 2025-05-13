@@ -1,4 +1,6 @@
 
+'use server';
+
 import { google } from 'googleapis';
 import type { sheets_v4 } from 'googleapis';
 
@@ -56,7 +58,7 @@ if (rawPrivateKeyFromEnv && rawPrivateKeyFromEnv.trim() !== '') {
         PRIVATE_KEY = undefined;
     }
 } else {
-    console.warn('GOOGLE_PRIVATE_KEY is not set, empty, or only whitespace in environment variables. PRIVATE_KEY will be undefined.');
+    // console.warn('GOOGLE_PRIVATE_KEY is not set, empty, or only whitespace in environment variables. PRIVATE_KEY will be undefined.');
     PRIVATE_KEY = undefined;
 }
 
@@ -67,12 +69,9 @@ if (rawPrivateKeyFromEnv && rawPrivateKeyFromEnv.trim() !== '') {
   if (!SERVICE_ACCOUNT_EMAIL) missingVarsWarn.push('GOOGLE_SERVICE_ACCOUNT_EMAIL');
   
   if (!PRIVATE_KEY) { 
-    if (!rawPrivateKeyFromEnv) {
-      missingVarsWarn.push('GOOGLE_PRIVATE_KEY (not set)');
-    } else if (rawPrivateKeyFromEnv.trim() === '') {
-      missingVarsWarn.push('GOOGLE_PRIVATE_KEY (set but empty/whitespace)');
-    }
-    else {
+    if (!rawPrivateKeyFromEnv || rawPrivateKeyFromEnv.trim() === '' || rawPrivateKeyFromEnv.trim() === '""' || rawPrivateKeyFromEnv.trim() === "''") {
+      // This case is normal if env vars are not set up yet. Avoid spamming console for this specific state.
+    } else {
       // This case means rawPrivateKeyFromEnv was set, but PRIVATE_KEY is still undefined,
       // implying formatting or PEM marker checks failed. The detailed warning above already covered this.
       missingVarsWarn.push('GOOGLE_PRIVATE_KEY (set but failed formatting/PEM checks - see detailed warning above)');
@@ -86,22 +85,17 @@ if (rawPrivateKeyFromEnv && rawPrivateKeyFromEnv.trim() !== '') {
 })();
 
 
-export function getSheetsClient(): sheets_v4.Sheets | null {
+export async function getSheetsClient(): Promise<sheets_v4.Sheets | null> {
   if (!SHEET_ID || !SERVICE_ACCOUNT_EMAIL || !PRIVATE_KEY) {
-    console.error('Cannot initialize Sheets client: Essential Google Sheets API credentials (SHEET_ID, SERVICE_ACCOUNT_EMAIL, PRIVATE_KEY) are not fully set or the private key is malformed/missing.');
-    const missing = [];
-    if (!SHEET_ID) missing.push('GOOGLE_SHEET_ID');
-    if (!SERVICE_ACCOUNT_EMAIL) missing.push('GOOGLE_SERVICE_ACCOUNT_EMAIL');
-    if (!PRIVATE_KEY) { 
-        if (!rawPrivateKeyFromEnv) {
-            missing.push('GOOGLE_PRIVATE_KEY (is not set)');
-        } else if (rawPrivateKeyFromEnv.trim() === '') {
-            missing.push('GOOGLE_PRIVATE_KEY (is set but empty/whitespace)');
-        } else {
-            missing.push('GOOGLE_PRIVATE_KEY (is set but was malformed or failed structural/PEM checks - see warnings above)');
-        }
+    const errorParts = ['Cannot initialize Sheets client due to missing/invalid credentials:'];
+    if (!SHEET_ID) errorParts.push('- GOOGLE_SHEET_ID is not set.');
+    if (!SERVICE_ACCOUNT_EMAIL) errorParts.push('- GOOGLE_SERVICE_ACCOUNT_EMAIL is not set.');
+    if (!PRIVATE_KEY) {
+      if (!rawPrivateKeyFromEnv) errorParts.push('- GOOGLE_PRIVATE_KEY is not set.');
+      else if (rawPrivateKeyFromEnv.trim() === '' || rawPrivateKeyFromEnv.trim() === '""' || rawPrivateKeyFromEnv.trim() === "''") errorParts.push('- GOOGLE_PRIVATE_KEY is set but is empty or only whitespace.');
+      else errorParts.push('- GOOGLE_PRIVATE_KEY is set but was malformed or failed structural/PEM checks (see previous warnings).');
     }
-    if (missing.length > 0) console.error(`Detailed missing/problematic environment variables: ${missing.join(', ')}`);
+    console.error(errorParts.join('\n  '));
     return null;
   }
 
@@ -127,13 +121,13 @@ export function getSheetsClient(): sheets_v4.Sheets | null {
 }
 
 export async function getSheetData(): Promise<SheetRow[]> {
-  const sheets = getSheetsClient();
+  const sheets = await getSheetsClient();
   if (!sheets) {
-     console.warn('Google Sheets client is not available (possibly due to configuration issues). Returning empty data for dashboard.');
+     // console.warn('Google Sheets client is not available (possibly due to configuration issues). Returning empty data for dashboard.');
      return [];
   }
   if (!SHEET_ID){ 
-    console.warn('GOOGLE_SHEET_ID is not configured. Returning empty data for dashboard.');
+    // console.warn('GOOGLE_SHEET_ID is not configured. Returning empty data for dashboard.');
     return [];
   }
 
@@ -145,7 +139,7 @@ export async function getSheetData(): Promise<SheetRow[]> {
 
     const rows = response.data.values;
     if (!rows || rows.length === 0) {
-      console.log('No data found in the specified sheet range or sheet is empty.');
+      // console.log('No data found in the specified sheet range or sheet is empty.');
       return [];
     }
 
@@ -155,7 +149,7 @@ export async function getSheetData(): Promise<SheetRow[]> {
     const expectedHeaders = ['Donor/Opp', 'Action/Next Step', 'Lead', 'Priority', 'Probability'];
     const missingHeaders = expectedHeaders.filter(eh => !headers.includes(eh));
     if (missingHeaders.length > 0) {
-       console.warn(`Sheet is missing expected headers: [${missingHeaders.join(', ')}]. Current headers: [${headers.join(', ')}]. Data mapping might be incorrect or incomplete.`);
+       // console.warn(`Sheet is missing expected headers: [${missingHeaders.join(', ')}]. Current headers: [${headers.join(', ')}]. Data mapping might be incorrect or incomplete.`);
     }
 
     return dataRows.map((row) => {
@@ -210,7 +204,7 @@ export async function getSheetData(): Promise<SheetRow[]> {
 }
 
 export async function appendSheetRow(rowData: Omit<SheetRow, ''>): Promise<boolean> {
-  const sheets = getSheetsClient();
+  const sheets = await getSheetsClient();
    if (!sheets) {
       console.error("Cannot append row: Google Sheets client not available (possibly due to configuration issues).");
       return false;

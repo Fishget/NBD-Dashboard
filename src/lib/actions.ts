@@ -159,7 +159,7 @@ export async function testSheetConnectionAction(
     };
   }
 
-  const sheets = getSheetsClient();
+  const sheets = await getSheetsClient();
   if (!sheets) {
     return {
       success: false,
@@ -204,10 +204,12 @@ export async function testSheetConnectionAction(
         details = `Sheet Not Found. Verify that the GOOGLE_SHEET_ID ('${process.env.GOOGLE_SHEET_ID}') is correct and the sheet exists.`;
     } else if (details.includes('invalid_grant') || details.includes('Could not load the default credentials')) {
         details = `Authentication Failed. This can be due to an invalid service account email, an incorrectly formatted or expired private key, or issues with the Google Cloud project setup. Ensure GOOGLE_PRIVATE_KEY is valid.`;
-    } else if (error.message?.includes('error:1E08010C:DECODER routines::unsupported') || error.message?.includes('PEM routines') || error.message?.includes('private key')) {
+    } else if (error.message?.includes('error:0A000152:SSL routines::unsafe legacy renegotiation disabled') || error.message?.includes('UNABLE_TO_GET_ISSUER_CERT_LOCALLY')) {
+        details = `SSL/TLS connection issue. This might be a network configuration problem, proxy issue, or an outdated CA certificate store on the server. Original error: ${error.message}`;
+    } else if (error.message?.includes('error:1E08010C:DECODER routines::unsupported') || error.message?.includes('PEM routines') || error.message?.includes('private key') || error.message?.includes('asn1 encoding')) {
         details = `Private key format error. The GOOGLE_PRIVATE_KEY provided is likely malformed or not a valid PEM key. It should start with '-----BEGIN PRIVATE KEY-----' and end with '-----END PRIVATE KEY-----', with the key content in between. Original error: ${error.message}`;
     }
-
+    
 
     return {
       success: false,
