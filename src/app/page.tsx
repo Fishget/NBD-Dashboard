@@ -1,3 +1,4 @@
+
 import { Suspense } from 'react';
 import type { SheetRow } from '../lib/types';
 import { getSheetData } from '@/lib/sheets';
@@ -48,7 +49,8 @@ async function DashboardData() {
   let tableData: SheetRow[] = []; // Default to empty array
   let errorOccurred = false; // General API or unexpected error
   let isConfigError = false; // Specific flag for configuration errors
-  let userFriendlyMessage = "Live data from Google Sheet. Use the filter input to search across all columns. Click column headers to sort.";
+  // Changed the default success message to "Live Data"
+  let userFriendlyMessage = "Live Data";
 
   try {
     // console.log("[Page:DashboardData SC] Attempting to fetch data.");
@@ -68,6 +70,7 @@ async function DashboardData() {
         // We don't set errorOccurred = true here unless we know an API error happened.
         // Checking server logs is important if this state is unexpected.
       }
+      // If tableData has items, userFriendlyMessage remains "Live Data"
     }
   } catch (error: any) { // Catch any other unexpected throws (should be rare with new getSheetData)
     console.error("[Page:DashboardData SC] Unexpected error during data fetching:", error);
@@ -76,6 +79,8 @@ async function DashboardData() {
     tableData = []; // Ensure tableData is an array
   }
 
+  const isSuccessWithData = !isConfigError && !errorOccurred && tableData.length > 0;
+
   return (
     <Card className="my-8 shadow-md">
       <CardHeader>
@@ -83,7 +88,7 @@ async function DashboardData() {
           <InfoIcon className="h-6 w-6" />
           Dashboard View
         </CardTitle>
-         <CardDescription>
+         <CardDescription className={isSuccessWithData ? "text-primary" : ""}>
           {userFriendlyMessage}
         </CardDescription>
       </CardHeader>
