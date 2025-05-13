@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -243,18 +242,18 @@ export function DashboardTable({ initialData }: DashboardTableProps) {
           <CardContent className="space-y-6"> {/* Added space-y-6 for overall chart content padding */}
              {/* Priority x Probability Matrix - Takes full width */}
             <div className="p-4 border rounded-lg shadow-sm bg-card">
-                <h3 className="text-lg font-semibold mb-4 text-center">Priority x Probability Matrix</h3>
+                <h3 className="text-lg font-semibold mb-3 text-center">Priority x Probability Matrix</h3>
                 <PriorityProbabilityMatrix data={initialData || []} onFilter={handleChartFilter} currentFilter={chartFilter} />
             </div>
             
             {/* Container for Priority and Probability charts - side by side on medium screens and up */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="p-4 border rounded-lg shadow-sm bg-card">
-                <h3 className="text-lg font-semibold mb-2 text-center">Opportunities by Priority</h3>
+                <h3 className="text-lg font-semibold mb-3 text-center">Opportunities by Priority</h3>
                 <OpportunitiesByPriorityChart data={initialData || []} onFilter={handleChartFilter} currentFilter={chartFilter} />
               </div>
               <div className="p-4 border rounded-lg shadow-sm bg-card">
-                <h3 className="text-lg font-semibold mb-2 text-center">Opportunities by Probability</h3>
+                <h3 className="text-lg font-semibold mb-3 text-center">Opportunities by Probability</h3>
                 <OpportunitiesByProbabilityChart data={initialData || []} onFilter={handleChartFilter} currentFilter={chartFilter} />
               </div>
             </div>
@@ -373,3 +372,4 @@ export function DashboardTable({ initialData }: DashboardTableProps) {
     </div>
   );
 }
+

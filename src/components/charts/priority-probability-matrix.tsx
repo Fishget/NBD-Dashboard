@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -62,8 +61,8 @@ export function PriorityProbabilityMatrix({ data, onFilter, currentFilter }: Pri
 
   return (
     <TooltipProvider>
-      {/* Removed max-w-md and mx-auto to allow full width */}
-      <div className="grid grid-cols-4 gap-1 w-full aspect-square">
+      {/* Removed max-w-md and mx-auto to allow full width, set explicit height */}
+      <div className="grid grid-cols-4 gap-1 w-full h-[280px]">
         {/* Corner Cell for Labels */}
         <div className="flex items-center justify-center text-xs font-medium text-muted-foreground"></div>
         {/* Probability Labels (Top Row) */}
@@ -91,7 +90,7 @@ export function PriorityProbabilityMatrix({ data, onFilter, currentFilter }: Pri
                     <div
                       onClick={() => onFilter({ priority, probability })}
                       className={cn(
-                        "flex items-center justify-center p-2 border rounded-md cursor-pointer transition-all aspect-square",
+                        "flex items-center justify-center p-2 border rounded-md cursor-pointer transition-all aspect-square", // aspect-square makes cells square
                         "hover:ring-2 hover:ring-offset-2 hover:ring-primary", // Enhanced hover effect
                         isActive && "ring-2 ring-offset-2 ring-primary shadow-lg", // Active cell styling
                       )}
@@ -124,3 +123,4 @@ export function PriorityProbabilityMatrix({ data, onFilter, currentFilter }: Pri
     </TooltipProvider>
   );
 }
+
