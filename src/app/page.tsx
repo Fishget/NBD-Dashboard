@@ -6,6 +6,7 @@ import { DashboardTable } from '@/components/dashboard-table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { InfoIcon, ServerCrash, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { RefreshButton } from '@/components/refresh-button'; // Added import
 
 // Helper component for loading skeleton
 function TableSkeleton() {
@@ -46,37 +47,29 @@ function TableSkeleton() {
 
 // DashboardData is a Server Component to fetch data
 async function DashboardData() {
-  let tableData: SheetRow[] = []; // Default to empty array
-  let errorOccurred = false; // General API or unexpected error
-  let isConfigError = false; // Specific flag for configuration errors
-  // Changed the default success message to "Live Data"
+  let tableData: SheetRow[] = []; 
+  let errorOccurred = false; 
+  let isConfigError = false; 
   let userFriendlyMessage = "Live Data";
 
   try {
-    // console.log("[Page:DashboardData SC] Attempting to fetch data.");
-    const dataResult = await getSheetData(); // Can be SheetRow[] or null
+    const dataResult = await getSheetData(); 
 
     if (dataResult === null) {
       isConfigError = true;
-      // This message is critical. Server logs from [SheetLib:] will have the specifics.
       userFriendlyMessage = "CRITICAL CONFIGURATION ERROR: Could not connect to Google Sheets. Please ensure GOOGLE_SHEET_ID, GOOGLE_SERVICE_ACCOUNT_EMAIL, and a valid GOOGLE_PRIVATE_KEY are correctly set in your environment variables and the server has been restarted. Check server logs for '[SheetLib:]' messages for details.";
-      tableData = []; // Ensure tableData is an array for DashboardTable
+      tableData = []; 
     } else {
       tableData = Array.isArray(dataResult) ? dataResult : [];
       if (tableData.length === 0) {
-        // This case means API call was successful, but no data rows returned.
-        // Or, an API error occurred after client init, and getSheetData returned [].
         userFriendlyMessage = "No data available in the Google Sheet, or the sheet is empty. If this is unexpected, please verify the sheet contents and the API configuration (Sheet ID, Range, Permissions) in the admin panel or server logs if an API error was logged by [SheetLib:getSheetData].";
-        // We don't set errorOccurred = true here unless we know an API error happened.
-        // Checking server logs is important if this state is unexpected.
       }
-      // If tableData has items, userFriendlyMessage remains "Live Data"
     }
-  } catch (error: any) { // Catch any other unexpected throws (should be rare with new getSheetData)
+  } catch (error: any) { 
     console.error("[Page:DashboardData SC] Unexpected error during data fetching:", error);
-    errorOccurred = true; // Mark as a general error
+    errorOccurred = true; 
     userFriendlyMessage = `An unexpected error occurred while fetching data: ${error.message || 'Unknown error'}. Please check server logs.`;
-    tableData = []; // Ensure tableData is an array
+    tableData = []; 
   }
 
   const isSuccessWithData = !isConfigError && !errorOccurred && tableData.length > 0;
@@ -84,10 +77,13 @@ async function DashboardData() {
   return (
     <Card className="my-8 shadow-md">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-primary">
-          <InfoIcon className="h-6 w-6" />
-          Dashboard View
-        </CardTitle>
+        <div className="flex justify-between items-center">
+          <CardTitle className="flex items-center gap-2 text-primary">
+            <InfoIcon className="h-6 w-6" />
+            Dashboard View
+          </CardTitle>
+          <RefreshButton /> {/* Added RefreshButton */}
+        </div>
          <CardDescription className={isSuccessWithData ? "text-primary" : ""}>
           {userFriendlyMessage}
         </CardDescription>
@@ -100,30 +96,29 @@ async function DashboardData() {
                     <div>
                         <p className="font-semibold">Configuration Error</p>
                         <p className="text-sm">
-                           {userFriendlyMessage} {/* Display the detailed config error message */}
+                           {userFriendlyMessage}
                         </p>
                     </div>
                 </div>
             </div>
         )}
-        {errorOccurred && !isConfigError && ( // General error, not config related
+        {errorOccurred && !isConfigError && ( 
              <div className="my-4 p-4 border border-destructive/20 rounded-md bg-destructive/10">
                 <div className="flex items-center gap-3 text-destructive">
                     <ServerCrash className="h-8 w-8" />
                     <div>
                         <p className="font-semibold">Error Fetching Data</p>
                         <p className="text-sm">
-                            {userFriendlyMessage} {/* Display the general error message */}
+                            {userFriendlyMessage}
                         </p>
                     </div>
                 </div>
             </div>
         )}
-        {/* Display message if no config error, no general error, but data is empty */}
         {tableData.length === 0 && !isConfigError && !errorOccurred && (
              <div className="my-4 p-4 border border-dashed border-border rounded-md bg-muted/50">
                 <div className="flex items-center gap-3 text-muted-foreground">
-                    <InfoIcon className="h-8 w-8 text-blue-500" />
+                    <InfoIcon className="h-8 w-8 text-primary" />
                     <div>
                         <p className="font-semibold text-card-foreground">No Data to Display</p>
                         <p className="text-sm">
@@ -134,7 +129,6 @@ async function DashboardData() {
             </div>
         )}
          <div className="mt-6">
-            {/* DashboardTable expects initialData to be SheetRow[] */}
             <DashboardTable initialData={tableData} />
         </div>
       </CardContent>
@@ -143,7 +137,6 @@ async function DashboardData() {
 }
 
 export default function Home() {
-  // console.log("[Page:Home SC] Rendering Home page.");
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold text-primary">NBD Dashboard</h1>

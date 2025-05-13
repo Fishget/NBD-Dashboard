@@ -3,27 +3,25 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import type { ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
 import { AdminForm } from '@/components/admin-form';
 import { SheetConfigForm } from '@/components/sheet-config-form';
 import { LogoutButton } from '@/components/logout-button';
 import { ConnectionTester } from '@/components/connection-tester';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { TestTubeDiagonal, Eye, EyeOff, LayoutGrid, Settings, Table as TableIcon, InfoIcon } from 'lucide-react';
+import { TestTubeDiagonal, Eye, EyeOff, LayoutGrid, Settings, Table as TableIcon, InfoIcon, RefreshCw } from 'lucide-react';
 import { LoginForm } from '@/components/login-form';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-// AdminDashboardDisplayWrapper is now passed as a prop
-
 
 interface AdminPageClientProps {
   initialLoggedIn: boolean;
   dashboardDisplaySlot: ReactNode;
 }
 
-// Helper component for loading skeleton
 function AdminTableSkeleton() {
   return (
     <div className="space-y-4">
@@ -65,6 +63,7 @@ export default function AdminPageClient({ initialLoggedIn, dashboardDisplaySlot 
   const [loggedIn, setLoggedIn] = useState(initialLoggedIn);
   const [isConnectionVerified, setIsConnectionVerified] = useState(false);
   const [showConfigFormOverride, setShowConfigFormOverride] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     setLoggedIn(initialLoggedIn);
@@ -82,6 +81,10 @@ export default function AdminPageClient({ initialLoggedIn, dashboardDisplaySlot 
   const toggleShowConfigForm = () => {
     setShowConfigFormOverride(prev => !prev);
   }
+
+  const handleRefreshDashboard = () => {
+    router.refresh();
+  };
 
   const displayConfigForm = !isConnectionVerified || showConfigFormOverride;
 
@@ -130,12 +133,18 @@ export default function AdminPageClient({ initialLoggedIn, dashboardDisplaySlot 
               <AccordionContent>
                 <Card>
                     <CardHeader>
-                        <CardTitle>Live Dashboard Preview</CardTitle>
-                        <CardDescription className="flex items-start gap-2">
+                        <div className="flex justify-between items-center">
+                           <CardTitle>Live Dashboard Preview</CardTitle>
+                           <Button variant="outline" size="sm" onClick={handleRefreshDashboard}>
+                               <RefreshCw className="mr-2 h-4 w-4" />
+                               Refresh
+                           </Button>
+                        </div>
+                        {/* Removed the specific CardDescription text as per request */}
+                        <CardDescription className="flex items-start gap-2 pt-2">
                            <InfoIcon className="h-5 w-5 text-primary mt-0.5 shrink-0" />
                            <span>
-                             View the current data from the Google Sheet. This is a read-only preview.
-                             If data fetching fails (e.g. due to configuration issues or API errors), an informative message will be displayed. Ensure Google Sheets API configuration is correct and the server is properly set up.
+                             This is a read-only preview of the current data. Configuration errors might affect display.
                            </span>
                         </CardDescription>
                     </CardHeader>
