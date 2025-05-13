@@ -5,6 +5,7 @@ import Link from 'next/link';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { cn } from '@/lib/utils';
+import { LayoutDashboard, UserCog } from 'lucide-react'; // Import icons
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -38,10 +39,12 @@ export default function RootLayout({
         <div className="flex flex-col min-h-screen">
           <header className="bg-primary text-primary-foreground p-4 shadow-md">
             <nav className="container mx-auto flex justify-between items-center">
-              <Link href="/" className="text-xl font-bold hover:opacity-90 transition-opacity">
+              <Link href="/" className="text-xl font-bold hover:opacity-90 transition-opacity flex items-center gap-2">
+                <LayoutDashboard className="h-6 w-6" /> 
                 NBD Dashboard
               </Link>
-              <Link href="/admin" className="text-sm font-medium hover:underline hover:opacity-90 transition-opacity">
+              <Link href="/admin" className="text-sm font-medium hover:underline hover:opacity-90 transition-opacity flex items-center gap-2">
+                <UserCog className="h-5 w-5" />
                 Admin
               </Link>
             </nav>
