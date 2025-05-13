@@ -13,10 +13,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ArrowUpDown, ChevronLeft, ChevronRight, BarChart2, Eye, EyeOff, FilterX } from 'lucide-react';
-import type { SheetRow } from '../../lib/types'; // Changed from @/lib/types
+import type { SheetRow } from '../../lib/types'; 
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-// import { OpportunitiesByLeadChart } from '@/components/charts/opportunities-by-lead-chart'; Removed
 import { OpportunitiesByPriorityChart } from '@/components/charts/opportunities-by-priority-chart';
 import { OpportunitiesByProbabilityChart } from '@/components/charts/opportunities-by-probability-chart';
 import { PriorityProbabilityMatrix } from '@/components/charts/priority-probability-matrix';
@@ -33,18 +32,18 @@ export type ChartFilterType = Record<string, string | number> | null;
 
 
 export function DashboardTable({ initialData }: DashboardTableProps) {
-  const [data, setData] = React.useState<SheetRow[]>(initialData || []); // Ensure initialData is not null/undefined
+  const [data, setData] = React.useState<SheetRow[]>(initialData || []); 
   const [filter, setFilter] = React.useState<string>('');
   const [sortKey, setSortKey] = React.useState<SortKey>(null);
   const [sortDirection, setSortDirection] = React.useState<SortDirection>('asc');
   const [currentPage, setCurrentPage] = React.useState(1);
   const [rowsPerPage, setRowsPerPage] = React.useState(50);
 
-  const [showCharts, setShowCharts] = React.useState(false);
+  const [showCharts, setShowCharts] = React.useState(true); // Charts visible by default
   const [chartFilter, setChartFilter] = React.useState<ChartFilterType>(null);
 
   React.useEffect(() => {
-    setData(initialData || []); // Ensure initialData is not null/undefined
+    setData(initialData || []); 
     setCurrentPage(1); 
   } , [initialData]);
 
@@ -81,7 +80,7 @@ export function DashboardTable({ initialData }: DashboardTableProps) {
   };
 
   const textFilteredData = React.useMemo(() => {
-    if (!Array.isArray(data)) return []; // Guard against data not being an array
+    if (!Array.isArray(data)) return []; 
     if (!filter) return data;
     return data.filter((row) =>
       Object.values(row).some((value) =>
@@ -91,7 +90,7 @@ export function DashboardTable({ initialData }: DashboardTableProps) {
   }, [data, filter]);
 
   const fullyFilteredData = React.useMemo(() => {
-      if (!Array.isArray(textFilteredData)) return []; // Guard
+      if (!Array.isArray(textFilteredData)) return []; 
       if (!chartFilter) return textFilteredData;
       return textFilteredData.filter(row => {
           return Object.entries(chartFilter).every(([key, value]) => {
@@ -104,7 +103,7 @@ export function DashboardTable({ initialData }: DashboardTableProps) {
 
 
   const sortedData = React.useMemo(() => {
-    if (!Array.isArray(fullyFilteredData)) return []; // Guard
+    if (!Array.isArray(fullyFilteredData)) return []; 
     if (!sortKey) return fullyFilteredData;
 
     return [...fullyFilteredData].sort((a, b) => {
@@ -121,14 +120,14 @@ export function DashboardTable({ initialData }: DashboardTableProps) {
   }, [fullyFilteredData, sortKey, sortDirection]);
   
   const currentTableData = React.useMemo(() => {
-    if (!Array.isArray(sortedData)) return []; // Guard
+    if (!Array.isArray(sortedData)) return []; 
     const indexOfLastRow = currentPage * rowsPerPage;
     const indexOfFirstRow = indexOfLastRow - rowsPerPage;
     return sortedData.slice(indexOfFirstRow, indexOfLastRow);
   }, [sortedData, currentPage, rowsPerPage]);
 
   const totalPages = React.useMemo(() => {
-    if (!Array.isArray(sortedData)) return 1; // Guard
+    if (!Array.isArray(sortedData)) return 1; 
     return Math.max(1, Math.ceil(sortedData.length / rowsPerPage));
   }, [sortedData, rowsPerPage]);
 
@@ -138,7 +137,7 @@ export function DashboardTable({ initialData }: DashboardTableProps) {
   }, [rowsPerPage]);
 
    React.useEffect(() => {
-    if (!Array.isArray(sortedData)) return; // Guard
+    if (!Array.isArray(sortedData)) return; 
     const newTotalPages = Math.max(1, Math.ceil(sortedData.length / rowsPerPage));
     if (currentPage > newTotalPages) {
       setCurrentPage(newTotalPages);
@@ -171,8 +170,6 @@ export function DashboardTable({ initialData }: DashboardTableProps) {
   const SKELETON_ROWS = 5;
 
 
-  // Render skeleton if initialData is not yet available or explicitly empty
-  // This helps prevent errors if initialData is undefined during first render.
   if (!initialData && !data.length) {
      return (
       <div className="w-full space-y-4">
@@ -241,14 +238,13 @@ export function DashboardTable({ initialData }: DashboardTableProps) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-             <div className="grid grid-cols-1 md:grid-cols-1 gap-6 mb-6"> {/* Matrix takes full width */}
+             <div className="grid grid-cols-1 md:grid-cols-1 gap-6 mb-6"> 
                 <div className="p-4 border rounded-lg shadow-sm bg-card">
                     <h3 className="text-lg font-semibold mb-2 text-center">Priority x Probability Matrix</h3>
                     <PriorityProbabilityMatrix data={initialData || []} onFilter={handleChartFilter} currentFilter={chartFilter} />
                 </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* OpportunitiesByLeadChart removed */}
               <div className="p-4 border rounded-lg shadow-sm bg-card">
                 <h3 className="text-lg font-semibold mb-2 text-center">Opportunities by Priority</h3>
                 <OpportunitiesByPriorityChart data={initialData || []} onFilter={handleChartFilter} currentFilter={chartFilter} />

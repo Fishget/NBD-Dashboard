@@ -1,4 +1,5 @@
 
+import * as React from 'react'; // Import React
 import { Suspense } from 'react';
 import type { SheetRow } from '../lib/types';
 import { getSheetData } from '@/lib/sheets';
@@ -7,15 +8,62 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { InfoIcon, ServerCrash, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { RefreshButton } from '@/components/refresh-button'; 
-import { cn } from '@/lib/utils'; // Added import for cn
+import { cn } from '@/lib/utils'; 
 
 // Helper component for loading skeleton
 function TableSkeleton() {
   return (
-    <div className="space-y-4">
-       <div className="flex justify-end">
-            <Skeleton className="h-10 w-[250px]" />
+    <div className="space-y-6"> {/* Increased spacing for better visual separation */}
+      {/* Skeleton for Chart Toggle and Filter Input */}
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-10 w-[150px]" /> {/* Toggle Charts Button */}
+          <Skeleton className="h-10 w-[180px]" /> {/* Reset Chart Filter Button (if applicable) */}
+        </div>
+        <Skeleton className="h-10 w-full sm:w-[240px]" /> {/* Filter Input */}
+      </div>
+
+      {/* Skeleton for Charts Area */}
+      <Card className="shadow-md">
+        <CardHeader>
+           <div className="flex items-center gap-2">
+            <Skeleton className="h-6 w-6 rounded-full" /> {/* Icon */}
+            <Skeleton className="h-6 w-[250px]" /> {/* Title */}
+           </div>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Skeleton for Matrix Chart */}
+          <div className="p-4 border rounded-lg shadow-sm bg-card">
+            <Skeleton className="h-6 w-3/4 mx-auto mb-4" /> {/* Chart Title */}
+            <div className="grid grid-cols-4 gap-2 w-full max-w-md mx-auto aspect-square">
+              <Skeleton className="aspect-square rounded-md" /> {/* Label placeholder */}
+              {[...Array(3)].map((_, i) => <Skeleton key={`prob-skel-${i}`} className="aspect-square rounded-md" />)}
+              {[...Array(3)].map((_, r) => (
+                <React.Fragment key={`row-skel-${r}`}>
+                  <Skeleton className="aspect-square rounded-md" /> {/* Label placeholder */}
+                  {[...Array(3)].map((_, c) => <Skeleton key={`cell-skel-${r}-${c}`} className="aspect-square rounded-md" />)}
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+          {/* Skeleton for two smaller charts */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {[...Array(2)].map((_, i) => (
+              <div key={`small-chart-skel-${i}`} className="p-4 border rounded-lg shadow-sm bg-card">
+                <Skeleton className="h-6 w-1/2 mx-auto mb-4" /> {/* Chart Title */}
+                <Skeleton className="h-[250px] w-full rounded-md" /> {/* Chart Area */}
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+      
+      {/* Skeleton for Table Header and Refresh Button (if it's outside table header) */}
+       <div className="flex justify-end mb-4"> {/* Adjusted from original skeleton */}
+            <Skeleton className="h-9 w-[150px]" /> {/* Refresh Button */}
        </div>
+
+      {/* Skeleton for Table */}
       <div className="rounded-md border">
         <div className="overflow-auto">
           <table className="w-full caption-bottom text-sm">
@@ -81,7 +129,6 @@ async function DashboardData() {
     <Card className="my-8 shadow-md">
       <CardHeader>
         <div className="flex justify-between items-center">
-          {/* Removed CardTitle as per implicit request to remove NBD Dashboard text */}
           <RefreshButton /> 
         </div>
          <CardDescription className={cn("text-primary", isSuccessWithData ? "text-primary" : "text-muted-foreground")}>
