@@ -1,3 +1,4 @@
+
 'use server';
 
 import { z } from 'zod';
@@ -86,8 +87,9 @@ export async function submitDataAction(
 
     if (success) {
       revalidatePath('/'); // Revalidate the homepage cache to show the new data
-      revalidatePath('/admin'); // Revalidate admin page to update dashboard preview
-      return { message: 'Data submitted successfully!', success: true };
+      // To prevent potential logout issues after submission, we are not revalidating /admin immediately.
+      // The admin dashboard preview might require a manual refresh to see the latest submitted data.
+      return { message: 'Data submitted successfully! The public dashboard has been updated. The admin preview may require a refresh to show the latest entry.', success: true };
     } else {
       return { message: 'Failed to submit data to Google Sheet. Please check the server console logs for more specific error details from the Google Sheets API.', success: false };
     }
