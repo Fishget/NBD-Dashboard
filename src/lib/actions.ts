@@ -86,8 +86,7 @@ export async function submitDataAction(
 
     if (success) {
       revalidatePath('/'); // Revalidate the homepage cache to show the new data
-      // revalidatePath('/admin'); // Commented out: Also revalidate admin page, this might be causing logout issues.
-      // The dashboard on the admin page might not update immediately, but this should prevent logout.
+      revalidatePath('/admin'); // Revalidate admin page to update dashboard preview
       return { message: 'Data submitted successfully!', success: true };
     } else {
       return { message: 'Failed to submit data to Google Sheet. Please check the server console logs for more specific error details from the Google Sheets API.', success: false };
@@ -223,4 +222,3 @@ export async function testSheetConnectionAction(
     };
   }
 }
-
