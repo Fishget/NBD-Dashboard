@@ -1,3 +1,4 @@
+
 'use server';
 
 import { z } from 'zod';
@@ -36,7 +37,7 @@ export async function loginAction(
 
     if (checkCredentials(username, password)) {
       await setAuthCookie();
-      revalidatePath('/admin'); // Revalidate admin path to trigger UI update after login
+      revalidatePath('/admin'); 
       return { message: 'Login successful!', success: true };
     } else {
       return { message: 'Invalid username or password.', success: false };
@@ -49,9 +50,7 @@ export async function loginAction(
 
 export async function logoutAction(): Promise<void> {
    await clearAuthCookie();
-   revalidatePath('/admin'); // Revalidate admin path to trigger UI update after logout
-   // No explicit redirect here, Next.js should handle refresh based on cookie state.
-   // If direct navigation is needed, it should be client-side via useRouter.
+   revalidatePath('/admin');
 }
 
 
@@ -87,12 +86,10 @@ export async function submitDataAction(
     const success = await appendSheetRow(dataToAppend);
 
     if (success) {
-      // Removed revalidatePath('/') to prevent potential logout issues on the admin page.
-      // The public dashboard and admin preview will now require a manual refresh to see the latest entry.
-      // Revalidating admin path to ensure any lists or dependent data on admin page refreshes if needed.
-      revalidatePath('/admin');
+      revalidatePath('/admin'); // Revalidate admin to refresh dashboard preview
+      revalidatePath('/'); // Revalidate public dashboard
       return {
-        message: 'Data submitted successfully! The public dashboard and admin preview may require a manual refresh to show the latest entry.',
+        message: 'Data submitted successfully!',
         success: true
       };
     } else {
@@ -127,10 +124,7 @@ export async function saveSheetConfigAction(
     }
 
     const configData: SheetConfigFormData = parsed.data;
-
-    // This action now primarily serves to validate the format and generate the .env.local preview.
-    // It does not save anything persistently on the server itself.
-    // The user is responsible for updating .env.local and restarting.
+    
     console.log('Received valid sheet configuration data for .env.local preview generation:', {
         sheetId: configData.sheetId,
         sheetRange: configData.sheetRange,
@@ -138,8 +132,6 @@ export async function saveSheetConfigAction(
         privateKey: '[REDACTED - validated but not stored by this action]',
     });
 
-    // Revalidate admin to reflect any UI changes potentially related to config form state,
-    // but the actual server config relies on env vars restart.
     revalidatePath('/admin');
 
     return {
@@ -186,7 +178,7 @@ export async function testSheetConnectionAction(
     });
 
     if (response.status === 200 && response.data.properties?.title) {
-       revalidatePath('/admin'); // Revalidate on successful test
+       revalidatePath('/admin'); 
       return {
         success: true,
         message: 'Connection test successful!',
@@ -217,10 +209,10 @@ export async function testSheetConnectionAction(
         details = `Authentication Failed. This can be due to an invalid service account email, an incorrectly formatted or expired private key, or issues with the Google Cloud project setup. Ensure GOOGLE_PRIVATE_KEY is valid.`;
     } else if (String(error.message || '').includes('error:0A000152:SSL routines::unsafe legacy renegotiation disabled') || String(error.message || '').includes('UNABLE_TO_GET_ISSUER_CERT_LOCALLY')) {
         details = `SSL/TLS connection issue. This might be a network configuration problem, proxy issue, or an outdated CA certificate store on the server. Original error: ${error.message}`;
-    } else if (String(error.message || '').includes('error:1E08010C:DECODER routines::unsupported') || String(error.message || '').includes('PEM routines') || String(error.message || '').includes('private key') || String(error.message || '').includes('asn1 encoding'))) {
+    } else if (String(error.message || '').includes('error:1E08010C:DECODER routines::unsupported') || String(error.message || '').includes('PEM routines') || String(error.message || '').includes('private key') || String(error.message || '').includes('asn1 encoding')) {
         details = `Private key format error. The GOOGLE_PRIVATE_KEY provided is likely malformed or not a valid PEM key. It should start with '-----BEGIN PRIVATE KEY-----' and end with '-----END PRIVATE KEY-----', with the key content in between. Original error: ${error.message}`;
     }
-
+    
     return {
       success: false,
       message: 'Connection test failed during API call.',
