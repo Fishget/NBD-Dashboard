@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -66,6 +67,7 @@ export function DashboardTable({ initialData }: DashboardTableProps) {
 
   const handleChartFilter = (newFilter: ChartFilterType) => {
     setChartFilter(prevFilter => {
+      // If the new filter is identical to the current one, clear the filter (toggle behavior)
       if (JSON.stringify(prevFilter) === JSON.stringify(newFilter)) {
         return null;
       }
@@ -170,10 +172,11 @@ export function DashboardTable({ initialData }: DashboardTableProps) {
   const SKELETON_ROWS = 5;
 
 
-  if (!initialData && !data.length) {
+  if (!initialData && !data.length) { // Check if initialData is also undefined/empty
      return (
       <div className="w-full space-y-4">
         <div className="flex justify-end">
+          {/* Using Skeleton component for placeholder */}
           <div className="h-10 w-[250px] bg-muted rounded animate-pulse" />
         </div>
         <div className="rounded-md border">
@@ -237,13 +240,14 @@ export function DashboardTable({ initialData }: DashboardTableProps) {
               Opportunities Overview
             </CardTitle>
           </CardHeader>
-          <CardContent>
-             <div className="grid grid-cols-1 md:grid-cols-1 gap-6 mb-6"> 
-                <div className="p-4 border rounded-lg shadow-sm bg-card">
-                    <h3 className="text-lg font-semibold mb-2 text-center">Priority x Probability Matrix</h3>
-                    <PriorityProbabilityMatrix data={initialData || []} onFilter={handleChartFilter} currentFilter={chartFilter} />
-                </div>
+          <CardContent className="space-y-6"> {/* Added space-y-6 for overall chart content padding */}
+             {/* Priority x Probability Matrix - Takes full width */}
+            <div className="p-4 border rounded-lg shadow-sm bg-card">
+                <h3 className="text-lg font-semibold mb-4 text-center">Priority x Probability Matrix</h3>
+                <PriorityProbabilityMatrix data={initialData || []} onFilter={handleChartFilter} currentFilter={chartFilter} />
             </div>
+            
+            {/* Container for Priority and Probability charts - side by side on medium screens and up */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="p-4 border rounded-lg shadow-sm bg-card">
                 <h3 className="text-lg font-semibold mb-2 text-center">Opportunities by Priority</h3>
@@ -267,7 +271,7 @@ export function DashboardTable({ initialData }: DashboardTableProps) {
                     <Button
                         variant="ghost"
                         onClick={() => handleSort(col.key)}
-                        className="px-2 py-1 h-auto text-left -ml-2"
+                        className="px-2 py-1 h-auto text-left -ml-2" // Minimal padding, auto height
                     >
                         {col.label}
                         <ArrowUpDown className={`ml-2 h-3 w-3 ${sortKey === col.key ? 'opacity-100' : 'opacity-30'}`} />
@@ -284,7 +288,7 @@ export function DashboardTable({ initialData }: DashboardTableProps) {
                      <TableCell 
                         key={col.key} 
                         className={cn(
-                          col.key === 'Action/Next Step' ? 'min-w-[200px]' : '',
+                          col.key === 'Action/Next Step' ? 'min-w-[200px]' : '', // Ensure Action/Next Step has enough width
                           (col.key === 'Priority' || col.key === 'Probability') && getStatusColorClass(String(row[col.key]))
                         )}
                       >
@@ -308,8 +312,9 @@ export function DashboardTable({ initialData }: DashboardTableProps) {
                     <div className="text-sm text-muted-foreground">
                         Displaying {currentTableData.length} of {(sortedData || []).length} rows
                     </div>
-                    {(sortedData || []).length > 0 && (
+                    {(sortedData || []).length > 0 && ( // Only show pagination if there's data
                         <div className="flex items-center space-x-2 sm:space-x-4 md:space-x-6">
+                            {/* Rows per page selector */}
                             <div className="flex items-center space-x-1 sm:space-x-2">
                                 <p className="text-xs sm:text-sm font-medium">Rows per page</p>
                                 <Select
@@ -318,7 +323,7 @@ export function DashboardTable({ initialData }: DashboardTableProps) {
                                     setRowsPerPage(Number(value));
                                     }}
                                 >
-                                    <SelectTrigger className="h-7 sm:h-8 w-[60px] sm:w-[70px] text-xs sm:text-sm">
+                                    <SelectTrigger className="h-7 sm:h-8 w-[60px] sm:w-[70px] text-xs sm:text-sm"> {/* Adjusted size */}
                                         <SelectValue placeholder={`${rowsPerPage}`} />
                                     </SelectTrigger>
                                     <SelectContent side="top">
@@ -330,13 +335,17 @@ export function DashboardTable({ initialData }: DashboardTableProps) {
                                     </SelectContent>
                                 </Select>
                             </div>
+
+                            {/* Page indicator */}
                             <div className="flex w-[80px] sm:w-[100px] items-center justify-center text-xs sm:text-sm font-medium">
                                 Page {currentPage} of {displayTotalPages}
                             </div>
+
+                            {/* Pagination buttons */}
                             <div className="flex items-center space-x-1 sm:space-x-2">
                                 <Button
                                     variant="outline"
-                                    className="h-7 w-7 sm:h-8 sm:w-8 p-0"
+                                    className="h-7 w-7 sm:h-8 sm:w-8 p-0" // Adjusted size
                                     onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                                     disabled={currentPage === 1}
                                 >
@@ -345,9 +354,9 @@ export function DashboardTable({ initialData }: DashboardTableProps) {
                                 </Button>
                                 <Button
                                     variant="outline"
-                                    className="h-7 w-7 sm:h-8 sm:w-8 p-0"
+                                    className="h-7 w-7 sm:h-8 sm:w-8 p-0" // Adjusted size
                                     onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-                                    disabled={currentPage === totalPages || totalPages === 0}
+                                    disabled={currentPage === totalPages || totalPages === 0} // Disable if on last page or no pages
                                 >
                                     <span className="sr-only">Go to next page</span>
                                     <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />

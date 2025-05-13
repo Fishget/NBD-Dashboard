@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -13,12 +14,12 @@ interface PriorityProbabilityMatrixProps {
 }
 
 const priorities: ('High' | 'Medium' | 'Low')[] = ['High', 'Medium', 'Low'];
-const probabilities: ('High' | 'Medium' | 'Low')[] = ['High', 'Medium', 'Low'];
+const probabilities: ('High' | 'Medium' | 'Low')[] = ['High', 'Medium', 'Low']; // Assuming these are the correct values
 
 const getPriorityColor = (priority: 'High' | 'Medium' | 'Low'): string => {
-  if (priority === 'High') return 'hsl(var(--chart-color-high))';
-  if (priority === 'Medium') return 'hsl(var(--chart-color-medium))';
-  return 'hsl(var(--chart-color-low))';
+  if (priority === 'High') return 'hsl(var(--chart-color-high))'; // Green
+  if (priority === 'Medium') return 'hsl(var(--chart-color-medium))'; // Orange/Yellow
+  return 'hsl(var(--chart-color-low))'; // Red
 };
 
 export function PriorityProbabilityMatrix({ data, onFilter, currentFilter }: PriorityProbabilityMatrixProps) {
@@ -31,11 +32,12 @@ export function PriorityProbabilityMatrix({ data, onFilter, currentFilter }: Pri
     if (!Array.isArray(data)) return matrix; // Return empty matrix if data is not an array
     
     data.forEach(row => {
+      // Ensure Priority and Probability are valid keys for the matrix
       if (
         priorities.includes(row.Priority) &&
         probabilities.includes(row.Probability) &&
-        matrix[row.Priority] && 
-        matrix[row.Priority][row.Probability] !== undefined
+        matrix[row.Priority] && // Check if priority exists as a key
+        matrix[row.Priority][row.Probability] !== undefined // Check if probability exists for that priority
       ) {
         matrix[row.Priority][row.Probability]++;
       }
@@ -60,7 +62,8 @@ export function PriorityProbabilityMatrix({ data, onFilter, currentFilter }: Pri
 
   return (
     <TooltipProvider>
-      <div className="grid grid-cols-4 gap-1 w-full max-w-md mx-auto aspect-square">
+      {/* Removed max-w-md and mx-auto to allow full width */}
+      <div className="grid grid-cols-4 gap-1 w-full aspect-square">
         {/* Corner Cell for Labels */}
         <div className="flex items-center justify-center text-xs font-medium text-muted-foreground"></div>
         {/* Probability Labels (Top Row) */}
@@ -79,7 +82,7 @@ export function PriorityProbabilityMatrix({ data, onFilter, currentFilter }: Pri
             {/* Data Cells */}
             {probabilities.map(probability => {
               const count = matrixData[priority][probability];
-              const opacity = count > 0 ? Math.max(0.2, count / maxCount) : 0.1; 
+              const opacity = count > 0 ? Math.max(0.2, count / maxCount) : 0.1; // Ensure some visibility even for 0
               const isActive = activePriority === priority && activeProbability === probability;
 
               return (
@@ -89,17 +92,18 @@ export function PriorityProbabilityMatrix({ data, onFilter, currentFilter }: Pri
                       onClick={() => onFilter({ priority, probability })}
                       className={cn(
                         "flex items-center justify-center p-2 border rounded-md cursor-pointer transition-all aspect-square",
-                        "hover:ring-2 hover:ring-offset-2 hover:ring-primary",
-                        isActive && "ring-2 ring-offset-2 ring-primary shadow-lg",
+                        "hover:ring-2 hover:ring-offset-2 hover:ring-primary", // Enhanced hover effect
+                        isActive && "ring-2 ring-offset-2 ring-primary shadow-lg", // Active cell styling
                       )}
                       style={{
                         backgroundColor: getPriorityColor(priority),
-                        opacity: isActive ? 1 : opacity, 
+                        opacity: isActive ? 1 : opacity, // Full opacity if active
                       }}
                       data-testid={`matrix-cell-${priority}-${probability}`}
                     >
                       <span className={cn(
                         "font-bold text-lg",
+                        // Basic contrast logic, can be refined
                         count > maxCount / 2 ? "text-white" : "text-black" 
                       )}>
                         {count}
