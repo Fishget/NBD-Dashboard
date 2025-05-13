@@ -30,9 +30,13 @@ export const sheetConfigSchema = z.object({
     serviceAccountEmail: z.string().email('Invalid service account email format. Please enter a valid email address.'),
     privateKey: z.string()
         .transform(key => {
-            // Normalize newlines (Windows \r\n to Unix \n) and then trim whitespace from the start and end of the entire key.
-            const normalizedKey = key.replace(/\r\n/g, '\n').trim();
-            return normalizedKey;
+            // 1. Replace literal "\\n" (escaped newlines common in JSON strings) with actual newline characters.
+            let processedKey = key.replace(/\\n/g, '\n');
+            // 2. Normalize Windows-style newlines (\r\n) to Unix-style newlines (\n).
+            processedKey = processedKey.replace(/\r\n/g, '\n');
+            // 3. Trim any leading/trailing whitespace from the entire key block.
+            processedKey = processedKey.trim();
+            return processedKey;
         })
         .pipe(
             z.string()
@@ -42,6 +46,7 @@ export const sheetConfigSchema = z.object({
             .refine(key => key.includes('\n'), { message: "Private key must be a multi-line string. Ensure newlines are preserved when copying." })
             .refine(key => {
                 // Check for common errors like pasting the entire JSON key-value pair or including quotes
+                // These checks are against the already transformed key (e.g. outer quotes should be removed by .trim())
                 if (key.startsWith('"-----BEGIN PRIVATE KEY-----') || key.startsWith("'-----BEGIN PRIVATE KEY-----")) {
                     return false;
                 }
