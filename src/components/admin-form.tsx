@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useActionState } from 'react'; // Correct import for useActionState
@@ -57,14 +58,10 @@ export function AdminForm() {
   }, [state, toast, form]);
 
   return (
-    <Card className="w-full max-w-2xl">
-      <CardHeader>
-        <CardTitle>Add New Entry</CardTitle>
-        <CardDescription>Enter the details below. The data will be added to the Google Sheet.</CardDescription>
-      </CardHeader>
-       {/* Display general error message */}
+    <Card className="w-full max-w-2xl border-0 shadow-none">
+       {/* Display general error message if not success and no field-specific errors */}
         {!state?.success && state?.message && !state.errors && (
-             <CardContent>
+             <CardContent className="pt-0"> {/* Adjust padding if header is removed */}
                  <Alert variant="destructive">
                    <Terminal className="h-4 w-4" />
                    <AlertTitle>Submission Failed</AlertTitle>
@@ -74,7 +71,7 @@ export function AdminForm() {
         )}
       <Form {...form}>
         <form action={formAction}>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 pt-0"> {/* Adjust padding if header is removed */}
              <FormField
                 control={form.control}
                 name="Donor/Opp"
@@ -191,7 +188,7 @@ export function AdminForm() {
              </div>
 
           </CardContent>
-          <CardFooter className="flex justify-end">
+          <CardFooter className="flex justify-end pt-0"> {/* Adjust padding if header is removed */}
             <SubmitButton />
           </CardFooter>
         </form>

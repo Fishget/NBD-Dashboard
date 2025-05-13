@@ -6,7 +6,7 @@ import { DashboardTable } from '@/components/dashboard-table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { InfoIcon, ServerCrash, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { RefreshButton } from '@/components/refresh-button'; // Added import
+import { RefreshButton } from '@/components/refresh-button'; 
 
 // Helper component for loading skeleton
 function TableSkeleton() {
@@ -50,7 +50,7 @@ async function DashboardData() {
   let tableData: SheetRow[] = []; 
   let errorOccurred = false; 
   let isConfigError = false; 
-  let userFriendlyMessage = "Live Data";
+  let userFriendlyMessage = "Live Data from Google Sheet";
 
   try {
     const dataResult = await getSheetData(); 
@@ -63,6 +63,8 @@ async function DashboardData() {
       tableData = Array.isArray(dataResult) ? dataResult : [];
       if (tableData.length === 0) {
         userFriendlyMessage = "No data available in the Google Sheet, or the sheet is empty. If this is unexpected, please verify the sheet contents and the API configuration (Sheet ID, Range, Permissions) in the admin panel or server logs if an API error was logged by [SheetLib:getSheetData].";
+      } else {
+        userFriendlyMessage = "Live Data from Google Sheet. Use the filter input to search across all columns. Click column headers to sort."
       }
     }
   } catch (error: any) { 
@@ -82,9 +84,9 @@ async function DashboardData() {
             <InfoIcon className="h-6 w-6" />
             Dashboard View
           </CardTitle>
-          <RefreshButton /> {/* Added RefreshButton */}
+          <RefreshButton /> 
         </div>
-         <CardDescription className={isSuccessWithData ? "text-primary" : ""}>
+         <CardDescription className={cn("text-primary", isSuccessWithData ? "text-primary" : "text-muted-foreground")}>
           {userFriendlyMessage}
         </CardDescription>
       </CardHeader>
@@ -139,10 +141,7 @@ async function DashboardData() {
 export default function Home() {
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-primary">NBD Dashboard</h1>
-      <p className="text-muted-foreground">
-        Live Data
-      </p>
+      {/* Removed H1 and P tags as per user request */}
       <Suspense fallback={<TableSkeleton />}>
         <DashboardData />
       </Suspense>
