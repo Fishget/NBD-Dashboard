@@ -41,6 +41,11 @@ body {
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Chart specific colors for Priority and Probability */
+    --chart-color-high: 145 63% 42%; /* Greenish */
+    --chart-color-medium: 45 93% 47%; /* Yellowish */
+    --chart-color-low: 0 84% 60%; /* Reddish */
   }
   .dark {
     /* Define dark theme colors if needed, otherwise fallback or adjust */
@@ -76,6 +81,11 @@ body {
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Chart specific colors for Priority and Probability - Dark Mode */
+    --chart-color-high: 145 50% 55%; 
+    --chart-color-medium: 45 70% 60%;
+    --chart-color-low: 0 70% 65%;
   }
 }
 

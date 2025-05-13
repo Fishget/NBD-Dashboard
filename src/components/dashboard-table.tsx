@@ -13,10 +13,16 @@ import {
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { ArrowUpDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowUpDown, ChevronLeft, ChevronRight, BarChart2, Eye, EyeOff, FilterX } from 'lucide-react';
 import type { SheetRow } from '@/lib/sheets';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { OpportunitiesByLeadChart } from '@/components/charts/opportunities-by-lead-chart';
+import { OpportunitiesByPriorityChart } from '@/components/charts/opportunities-by-priority-chart';
+import { OpportunitiesByProbabilityChart } from '@/components/charts/opportunities-by-probability-chart';
+import { PriorityProbabilityMatrix } from '@/components/charts/priority-probability-matrix';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
 
 interface DashboardTableProps {
   initialData: SheetRow[];
@@ -24,6 +30,8 @@ interface DashboardTableProps {
 
 type SortKey = keyof SheetRow | null;
 type SortDirection = 'asc' | 'desc';
+export type ChartFilterType = Record<string, string | number> | null;
+
 
 export function DashboardTable({ initialData }: DashboardTableProps) {
   const [data, setData] = React.useState<SheetRow[]>(initialData);
@@ -32,6 +40,9 @@ export function DashboardTable({ initialData }: DashboardTableProps) {
   const [sortDirection, setSortDirection] = React.useState<SortDirection>('asc');
   const [currentPage, setCurrentPage] = React.useState(1);
   const [rowsPerPage, setRowsPerPage] = React.useState(50);
+
+  const [showCharts, setShowCharts] = React.useState(false);
+  const [chartFilter, setChartFilter] = React.useState<ChartFilterType>(null);
 
   React.useEffect(() => {
     setData(initialData);
@@ -53,7 +64,26 @@ export function DashboardTable({ initialData }: DashboardTableProps) {
     setCurrentPage(1); // Reset page when sort changes
   };
 
-  const filteredData = React.useMemo(() => {
+  const toggleCharts = () => setShowCharts(prev => !prev);
+
+  const handleChartFilter = (newFilter: ChartFilterType) => {
+    setChartFilter(prevFilter => {
+      // If the new filter is the same as the current one, clear it (toggle behavior)
+      if (JSON.stringify(prevFilter) === JSON.stringify(newFilter)) {
+        return null;
+      }
+      return newFilter;
+    });
+    setCurrentPage(1);
+  };
+
+  const resetChartFilters = () => {
+    setChartFilter(null);
+    setCurrentPage(1);
+  };
+
+  const textFilteredData = React.useMemo(() => {
+    if (!filter) return data;
     return data.filter((row) =>
       Object.values(row).some((value) =>
         String(value).toLowerCase().includes(filter)
@@ -61,10 +91,22 @@ export function DashboardTable({ initialData }: DashboardTableProps) {
     );
   }, [data, filter]);
 
-  const sortedData = React.useMemo(() => {
-    if (!sortKey) return filteredData;
+  const fullyFilteredData = React.useMemo(() => {
+      if (!chartFilter) return textFilteredData;
+      return textFilteredData.filter(row => {
+          return Object.entries(chartFilter).every(([key, value]) => {
+              const rowValue = String(row[key as keyof SheetRow]).toLowerCase();
+              const filterValue = String(value).toLowerCase();
+              return rowValue === filterValue;
+          });
+      });
+  }, [textFilteredData, chartFilter]);
 
-    return [...filteredData].sort((a, b) => {
+
+  const sortedData = React.useMemo(() => {
+    if (!sortKey) return fullyFilteredData;
+
+    return [...fullyFilteredData].sort((a, b) => {
       const valA = a[sortKey];
       const valB = b[sortKey];
 
@@ -72,7 +114,7 @@ export function DashboardTable({ initialData }: DashboardTableProps) {
       if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
       return 0;
     });
-  }, [filteredData, sortKey, sortDirection]);
+  }, [fullyFilteredData, sortKey, sortDirection]);
 
   // Pagination logic
   const totalPages = Math.ceil(sortedData.length / rowsPerPage);
@@ -90,7 +132,7 @@ export function DashboardTable({ initialData }: DashboardTableProps) {
     const newTotalPages = Math.ceil(sortedData.length / rowsPerPage);
     if (currentPage > newTotalPages && newTotalPages > 0) {
       setCurrentPage(newTotalPages);
-    } else if (newTotalPages === 0 && sortedData.length === 0) {
+    } else if (newTotalPages === 0 && sortedData.length === 0 && currentPage !== 1) {
       setCurrentPage(1);
     }
   }, [sortedData.length, rowsPerPage, currentPage]);
@@ -107,11 +149,11 @@ export function DashboardTable({ initialData }: DashboardTableProps) {
   const getStatusColorClass = (value: string): string => {
     switch (value?.toLowerCase()) {
       case 'high':
-        return 'text-green-600 dark:text-green-400 font-semibold';
+        return 'text-[hsl(var(--chart-color-high))] font-semibold';
       case 'medium':
-        return 'text-yellow-600 dark:text-yellow-400 font-semibold';
+        return 'text-[hsl(var(--chart-color-medium))] font-semibold';
       case 'low':
-        return 'text-red-600 dark:text-red-400 font-semibold'; // Changed to red-600 for consistency
+        return 'text-[hsl(var(--chart-color-low))] font-semibold';
       default:
         return '';
     }
@@ -121,15 +163,59 @@ export function DashboardTable({ initialData }: DashboardTableProps) {
 
   return (
     <div className="w-full space-y-4">
-       <div className="flex justify-end">
-         <Input
-            type="text"
-            placeholder="Filter data..."
-            value={filter}
-            onChange={handleFilterChange}
-            className="max-w-sm"
-          />
-       </div>
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div className="flex items-center gap-2">
+            <Button onClick={toggleCharts} variant="outline">
+            {showCharts ? <EyeOff className="mr-2 h-4 w-4" /> : <Eye className="mr-2 h-4 w-4" />}
+            {showCharts ? 'Hide Charts' : 'Show Charts'}
+            </Button>
+            {chartFilter && (
+            <Button onClick={resetChartFilters} variant="outline" size="sm">
+                <FilterX className="mr-2 h-4 w-4" />
+                Reset Chart Filter
+            </Button>
+            )}
+        </div>
+        <Input
+          type="text"
+          placeholder="Filter data..."
+          value={filter}
+          onChange={handleFilterChange}
+          className="max-w-xs w-full sm:w-auto"
+        />
+      </div>
+
+      {showCharts && (
+        <Card className="shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <BarChart2 className="mr-2 h-5 w-5 text-primary" />
+              Opportunities Overview
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="p-4 border rounded-lg shadow-sm bg-card">
+                <h3 className="text-lg font-semibold mb-2 text-center">Opportunities by Lead</h3>
+                <OpportunitiesByLeadChart data={initialData} onFilter={handleChartFilter} currentFilter={chartFilter} />
+              </div>
+              <div className="p-4 border rounded-lg shadow-sm bg-card">
+                <h3 className="text-lg font-semibold mb-2 text-center">Opportunities by Priority</h3>
+                <OpportunitiesByPriorityChart data={initialData} onFilter={handleChartFilter} currentFilter={chartFilter} />
+              </div>
+              <div className="p-4 border rounded-lg shadow-sm bg-card">
+                <h3 className="text-lg font-semibold mb-2 text-center">Opportunities by Probability</h3>
+                <OpportunitiesByProbabilityChart data={initialData} onFilter={handleChartFilter} currentFilter={chartFilter} />
+              </div>
+              <div className="p-4 border rounded-lg shadow-sm bg-card">
+                <h3 className="text-lg font-semibold mb-2 text-center">Priority vs. Probability Matrix</h3>
+                <PriorityProbabilityMatrix data={initialData} onFilter={handleChartFilter} currentFilter={chartFilter} />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="rounded-md border shadow-sm">
         <Table>
           <TableHeader>
@@ -151,7 +237,7 @@ export function DashboardTable({ initialData }: DashboardTableProps) {
           <TableBody>
             {currentTableData.length > 0 ? (
               currentTableData.map((row, index) => (
-                <TableRow key={index}>
+                <TableRow key={index} data-testid={`table-row-${index}`}>
                   {columns.map((col) => (
                      <TableCell 
                         key={col.key} 
@@ -160,7 +246,7 @@ export function DashboardTable({ initialData }: DashboardTableProps) {
                           (col.key === 'Priority' || col.key === 'Probability') && getStatusColorClass(String(row[col.key]))
                         )}
                       >
-                      {row[col.key]}
+                      {String(row[col.key])}
                     </TableCell>
                   ))}
                 </TableRow>
@@ -168,7 +254,7 @@ export function DashboardTable({ initialData }: DashboardTableProps) {
             ) : (
               <TableRow>
                 <TableCell colSpan={columns.length} className="h-24 text-center">
-                  {initialData.length === 0 ? "No data available in the sheet." : "No results found for your filter."}
+                  {initialData.length === 0 ? "No data available in the sheet." : "No results found for your filter(s)."}
                 </TableCell>
               </TableRow>
             )}
@@ -178,7 +264,7 @@ export function DashboardTable({ initialData }: DashboardTableProps) {
                <TableCell colSpan={columns.length}>
                 <div className="flex items-center justify-between w-full py-2">
                     <div className="text-sm text-muted-foreground">
-                        Total Rows: {sortedData.length}
+                        Displaying {currentTableData.length} of {sortedData.length} rows
                     </div>
                     {sortedData.length > 0 && (
                         <div className="flex items-center space-x-2 sm:space-x-4 md:space-x-6">
