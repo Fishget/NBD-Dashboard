@@ -120,11 +120,17 @@ export async function getSheetsClient(): Promise<sheets_v4.Sheets | null> {
     return google.sheets({ version: 'v4', auth });
   } catch (error: any) {
     console.error('CRITICAL Error initializing Google Auth client with processed PRIVATE_KEY:', error.message);
-    const pkPreview = PRIVATE_KEY ? `${PRIVATE_KEY.substring(0, Math.min(40, PRIVATE_KEY.length))}...${PRIVATE_KEY.substring(Math.max(0, PRIVATE_KEY.length - Math.min(40, PRIVATE_KEY.length)))}` : "PRIVATE_KEY_IS_UNDEFINED";
-    console.error(`Private key used (preview): ${pkPreview}`);
+    const pkPreview = PRIVATE_KEY 
+        ? `${PRIVATE_KEY.substring(0, Math.min(40, PRIVATE_KEY.length))}...${PRIVATE_KEY.substring(Math.max(0, PRIVATE_KEY.length - Math.min(40, PRIVATE_KEY.length)))}` 
+        : "PRIVATE_KEY_IS_UNDEFINED_AT_AUTH_INIT_CATCH_BLOCK"; // More specific location
+    console.error(`Private key passed to GoogleAuth (preview): ${pkPreview}`);
+    console.error(`Type of PRIVATE_KEY at auth init: ${typeof PRIVATE_KEY}, Length: ${PRIVATE_KEY?.length}`);
+    
     if (error instanceof Error && (error.message.includes('DECODER routines') || error.message.includes('PEM routines') || error.message.includes('private key') || error.message.includes('asn1 encoding'))) {
         console.error(
-          'This error during auth initialization often indicates an issue with the GOOGLE_PRIVATE_KEY format or value even after initial checks. Ensure it is a valid PEM-formatted private key, with actual newlines if copied from a source that used \\n. The key might have passed basic structural checks but is still not parsable by the crypto library.'
+          'Auth Init Error Detail: This error specifically points to an issue with the GOOGLE_PRIVATE_KEY format or value that the underlying crypto library cannot parse. ' +
+          'Ensure it is a valid PEM-formatted private key. The key might have passed initial structural checks but is still not parsable. ' +
+          'Check for hidden characters, ensure correct newline representation, and verify the key is not corrupted.'
         );
     }
     return null;
