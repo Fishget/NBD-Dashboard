@@ -38,10 +38,10 @@ export default function RootLayout({
         <div className="flex flex-col min-h-screen">
           <header className="bg-primary text-primary-foreground p-4 shadow-md">
             <nav className="container mx-auto flex justify-between items-center">
-              <Link href="/" className="text-xl font-bold">
+              <Link href="/" className="text-xl font-bold hover:opacity-90 transition-opacity">
                 NBD Dashboard
               </Link>
-              <Link href="/admin" className="text-sm font-medium hover:underline">
+              <Link href="/admin" className="text-sm font-medium hover:underline hover:opacity-90 transition-opacity">
                 Admin
               </Link>
             </nav>
@@ -58,3 +58,4 @@ export default function RootLayout({
     </html>
   );
 }
+
