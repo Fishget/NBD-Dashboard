@@ -6,11 +6,14 @@ import { Button } from '@/components/ui/button';
 import { testSheetConnectionAction, type FormState } from '@/lib/actions';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { CheckCircle, XCircle, Loader2, Info } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast'; // Assuming you have a useToast hook
+import { useToast } from '@/hooks/use-toast';
 
-export function ConnectionTester() {
+interface ConnectionTesterProps {
+  onConnectionSuccess?: () => void;
+}
+
+export function ConnectionTester({ onConnectionSuccess }: ConnectionTesterProps) {
   const [state, formAction, pending] = useActionState<FormState | null, null>(
-    // Cast the action to match the expected signature if it doesn't take formData
     (prevState, _formData: null) => testSheetConnectionAction(prevState),
     null
   );
@@ -23,20 +26,18 @@ export function ConnectionTester() {
         title: state.success ? 'Connection Test Result' : 'Connection Test Failed',
         description: state.message,
         variant: state.success ? 'default' : 'destructive',
-        duration: state.success ? 5000 : 10000, // Longer duration for errors with details
+        duration: state.success ? 5000 : 10000,
       });
+      if (state.success && onConnectionSuccess) {
+        onConnectionSuccess();
+      }
     }
-  }, [state, toast]);
+  }, [state, toast, onConnectionSuccess]);
 
   return (
     <div className="space-y-4">
       <form
         action={() => {
-          // useActionState's formAction expects FormData, but our action doesn't need it.
-          // We pass null or an empty FormData if the action is adapted to handle it.
-          // For actions not needing FormData, directly calling is fine,
-          // but useActionState's pending status is tied to its formAction.
-          // We call formAction with a null argument as our action is adapted for it.
           formAction(null); 
         }}
       >
