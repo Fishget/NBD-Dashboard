@@ -1,4 +1,3 @@
-
 'use server';
 
 import { google } from 'googleapis';
@@ -22,34 +21,33 @@ let PRIVATE_KEY: string | undefined;
 const rawPrivateKeyFromEnv = process.env.GOOGLE_PRIVATE_KEY;
 
 if (typeof rawPrivateKeyFromEnv === 'string' && rawPrivateKeyFromEnv.trim() !== '') {
-    let processedEnvVar = rawPrivateKeyFromEnv.trim();
+    let key = rawPrivateKeyFromEnv.trim();
     
     // Strip surrounding quotes if present (common for multi-line env vars copied from JSON strings)
-    if ((processedEnvVar.startsWith('"') && processedEnvVar.endsWith('"')) ||
-        (processedEnvVar.startsWith("'") && processedEnvVar.endsWith("'"))) {
-        processedEnvVar = processedEnvVar.substring(1, processedEnvVar.length - 1);
+    if ((key.startsWith('"') && key.endsWith('"')) ||
+        (key.startsWith("'") && key.endsWith("'"))) {
+        key = key.substring(1, key.length - 1);
     }
 
-    // Replace literal '\n' with actual newline characters
-    let keyWithNewlines = processedEnvVar.replace(/\\n/g, '\n');
-    
-    // Trim again after replacing newlines, in case of whitespace around the actual key block
-    keyWithNewlines = keyWithNewlines.trim();
+    // Unescape literal '\\n' to actual newline characters.
+    const unescapedKeyRaw = key.replace(/\\n/g, '\n');
+    // Trim whitespace around the entire unescaped block before checking markers.
+    const unescapedKey = unescapedKeyRaw.trim(); 
 
     if (
-        keyWithNewlines.startsWith('-----BEGIN PRIVATE KEY-----') &&
-        keyWithNewlines.endsWith('-----END PRIVATE KEY-----')
+        unescapedKey.startsWith('-----BEGIN PRIVATE KEY-----') &&
+        unescapedKey.endsWith('-----END PRIVATE KEY-----') &&
+        unescapedKey.includes('\n') // Ensure there are actual newlines within the key block
     ) {
-        const coreKeyContent = keyWithNewlines
-            .substring('-----BEGIN PRIVATE KEY-----'.length, keyWithNewlines.length - '-----END PRIVATE KEY-----'.length)
+        const coreKeyContent = unescapedKey
+            .substring('-----BEGIN PRIVATE KEY-----'.length, unescapedKey.length - '-----END PRIVATE KEY-----'.length)
             .trim();
         if (coreKeyContent.length > 0) {
-            PRIVATE_KEY = keyWithNewlines;
+            PRIVATE_KEY = unescapedKey; // Use the trimmed, unescaped key
             // console.log('Successfully processed GOOGLE_PRIVATE_KEY.');
         } else {
             console.warn(
-                'GOOGLE_PRIVATE_KEY warning: Found PEM markers but no content in between after processing. ' +
-                'Key length (after processing): ' + keyWithNewlines.length + '. ' +
+                'GOOGLE_PRIVATE_KEY warning: Processed key has PEM markers but no content in between. ' +
                 'Original GOOGLE_PRIVATE_KEY (first 30 chars, trimmed): "' + (rawPrivateKeyFromEnv || "").trim().substring(0, 30) + '". ' +
                 'Sheet operations will likely fail.'
             );
@@ -57,11 +55,12 @@ if (typeof rawPrivateKeyFromEnv === 'string' && rawPrivateKeyFromEnv.trim() !== 
         }
     } else {
         console.warn(
-            'GOOGLE_PRIVATE_KEY warning: Malformed structure. Does not start/end with correct PEM markers after processing. ' +
-            'Key starts with (after processing): "' + keyWithNewlines.substring(0, 30) + '". ' +
-            'Key ends with (after processing): "' + keyWithNewlines.substring(Math.max(0, keyWithNewlines.length - 30)) + '". ' +
+            'GOOGLE_PRIVATE_KEY warning: Malformed structure after processing. ' +
+            `Key starts with (after processing and trimming): "${unescapedKey.substring(0, 30)}...". ` +
+            `Key ends with (after processing and trimming): "...${unescapedKey.substring(Math.max(0, unescapedKey.length - 30))}". ` +
+            `Includes newlines: ${unescapedKey.includes('\n')}. ` +
             'Original GOOGLE_PRIVATE_KEY (first 30 chars, trimmed): "' + (rawPrivateKeyFromEnv || "").trim().substring(0, 30) + '". ' +
-            'Sheet operations will likely fail.'
+            'Ensure it is a valid PEM key with actual newlines between markers, correctly escaped newlines (\\n) if stored as a single line string in .env, and no extraneous characters.'
         );
         PRIVATE_KEY = undefined;
     }
@@ -81,11 +80,8 @@ if (typeof rawPrivateKeyFromEnv === 'string' && rawPrivateKeyFromEnv.trim() !== 
   if (!SERVICE_ACCOUNT_EMAIL) missingVarsWarn.push('GOOGLE_SERVICE_ACCOUNT_EMAIL');
   
   if (!PRIVATE_KEY && rawPrivateKeyFromEnv && rawPrivateKeyFromEnv.trim() !== '') { 
-    // This case means rawPrivateKeyFromEnv was set, but PRIVATE_KEY is still undefined,
-    // implying formatting or PEM marker checks failed. The detailed warning above already covered this.
     missingVarsWarn.push('GOOGLE_PRIVATE_KEY (set but failed processing - see detailed warning above)');
   } else if (!PRIVATE_KEY && (!rawPrivateKeyFromEnv || rawPrivateKeyFromEnv.trim() === '')) {
-    // This means it was not set or was empty.
      missingVarsWarn.push('GOOGLE_PRIVATE_KEY (not set or empty)');
   }
 
@@ -116,15 +112,17 @@ export async function getSheetsClient(): Promise<sheets_v4.Sheets | null> {
     const auth = new google.auth.GoogleAuth({
       credentials: {
         client_email: SERVICE_ACCOUNT_EMAIL,
-        private_key: PRIVATE_KEY, // Should have actual newlines here
+        private_key: PRIVATE_KEY, 
       },
       scopes: ['https://www.googleapis.com/auth/spreadsheets'],
     });
-
+    // console.log('GoogleAuth client initialized successfully.');
     return google.sheets({ version: 'v4', auth });
   } catch (error: any) {
-    console.error('Error initializing Google Auth client:', error.message);
-    if (error instanceof Error && (error.message.includes('DECODER routines') || error.message.includes('PEM routines') || error.message.includes('asn1 encoding'))) {
+    console.error('CRITICAL Error initializing Google Auth client with processed PRIVATE_KEY:', error.message);
+    const pkPreview = PRIVATE_KEY ? `${PRIVATE_KEY.substring(0, Math.min(40, PRIVATE_KEY.length))}...${PRIVATE_KEY.substring(Math.max(0, PRIVATE_KEY.length - Math.min(40, PRIVATE_KEY.length)))}` : "PRIVATE_KEY_IS_UNDEFINED";
+    console.error(`Private key used (preview): ${pkPreview}`);
+    if (error instanceof Error && (error.message.includes('DECODER routines') || error.message.includes('PEM routines') || error.message.includes('private key') || error.message.includes('asn1 encoding'))) {
         console.error(
           'This error during auth initialization often indicates an issue with the GOOGLE_PRIVATE_KEY format or value even after initial checks. Ensure it is a valid PEM-formatted private key, with actual newlines if copied from a source that used \\n. The key might have passed basic structural checks but is still not parsable by the crypto library.'
         );
@@ -202,7 +200,11 @@ export async function getSheetData(): Promise<SheetRow[]> {
 
 
   } catch (error: any) {
-    console.error('Error fetching sheet data from Google Sheets API:', error.message);
+    console.error('CRITICAL ERROR in getSheetData:', error); 
+    console.error('Error message:', error.message);
+    if (error.stack) console.error('Stack trace:', error.stack);
+    if (error.response?.data) console.error('Google API response error data:', error.response.data);
+    
     if (error instanceof Error) {
         if (error.message.includes('PERMISSION_DENIED')) {
             console.error(`getSheetData Error: Permission denied. Ensure the service account (${SERVICE_ACCOUNT_EMAIL}) has at least read access to the Google Sheet (${SHEET_ID}).`);
@@ -261,3 +263,4 @@ export async function appendSheetRow(rowData: Omit<SheetRow, ''>): Promise<boole
     return false;
   }
 }
+
