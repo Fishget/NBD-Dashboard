@@ -20,24 +20,40 @@ let PRIVATE_KEY: string | undefined;
 const rawPrivateKeyFromEnv = process.env.GOOGLE_PRIVATE_KEY;
 
 if (rawPrivateKeyFromEnv && rawPrivateKeyFromEnv.trim() !== '') {
-    // Standard processing: replace escaped newlines with actual newlines, then trim.
-    let key = rawPrivateKeyFromEnv.replace(/\\n/g, '\n').trim();
+    let processedEnvVar = rawPrivateKeyFromEnv.trim();
+    // Strip surrounding quotes if present (common for multi-line env vars)
+    if ((processedEnvVar.startsWith('"') && processedEnvVar.endsWith('"')) ||
+        (processedEnvVar.startsWith("'") && processedEnvVar.endsWith("'"))) {
+        processedEnvVar = processedEnvVar.substring(1, processedEnvVar.length - 1);
+    }
+
+    // Now, process for escaped newlines and then trim again
+    let key = processedEnvVar.replace(/\\n/g, '\n').trim();
 
     // Validate basic PEM structure.
     if (key.startsWith('-----BEGIN PRIVATE KEY-----') && key.endsWith('-----END PRIVATE KEY-----')) {
-        PRIVATE_KEY = key;
+        // Further check: ensure there's content between header and footer
+        const coreKeyContent = key.substring('-----BEGIN PRIVATE KEY-----'.length, key.length - '-----END PRIVATE KEY-----'.length).trim();
+        if (coreKeyContent.length > 0) {
+            PRIVATE_KEY = key;
+        } else {
+            console.warn(
+                'GOOGLE_PRIVATE_KEY appears to have valid PEM markers but no actual key content in between after processing. Sheet operations will fail.' +
+                `\n  Original GOOGLE_PRIVATE_KEY (trimmed, first 30 chars): "${(rawPrivateKeyFromEnv || "").trim().substring(0, Math.min(30, (rawPrivateKeyFromEnv || "").trim().length))}"`
+            );
+            PRIVATE_KEY = undefined;
+        }
     } else {
         console.warn(
             'GOOGLE_PRIVATE_KEY environment variable appears malformed after processing. It will not be used. Sheet operations may fail.' +
-            `\n  Problem: Did not pass startsWith/endsWith "-----BEGIN/END PRIVATE KEY-----" check.` +
-            `\n  Processed key starts with: "${key.substring(0, Math.min(30, key.length))}"` +
+            `\n  Problem: Did not pass PEM marker (-----BEGIN/END PRIVATE KEY-----) checks.` +
+            `\n  Processed key (after potential quote stripping & newline conversion) starts with: "${key.substring(0, Math.min(30, key.length))}"` +
             `\n  Processed key ends with: "${key.substring(Math.max(0, key.length - 30))}"` +
-            `\n  Length of processed key: ${key.length}` +
-            `\n  Original GOOGLE_PRIVATE_KEY (first 30 chars, if set): "${rawPrivateKeyFromEnv?.substring(0, Math.min(30, rawPrivateKeyFromEnv.length)) ?? 'NOT SET'}"` +
-            `\n  Hint: Check for extra quotes, missing PEM markers, or incorrect newline escaping in your .env.local file for GOOGLE_PRIVATE_KEY.` +
-            ` The key in .env.local should typically be a single long string enclosed in double quotes, with literal \\n for newlines.`
+            `\n  Length of this processed key string: ${key.length}` +
+            `\n  Original GOOGLE_PRIVATE_KEY (trimmed, first 30 chars): "${(rawPrivateKeyFromEnv || "").trim().substring(0, Math.min(30, (rawPrivateKeyFromEnv || "").trim().length))}"` +
+            `\n  Hint: Check for missing PEM markers, extra characters, or incorrect newline escaping in your .env.local file for GOOGLE_PRIVATE_KEY.`
         );
-        PRIVATE_KEY = undefined; // Ensure it's undefined if structural check fails
+        PRIVATE_KEY = undefined;
     }
 } else {
     console.warn('GOOGLE_PRIVATE_KEY is not set, empty, or only whitespace in environment variables. PRIVATE_KEY will be undefined.');
@@ -58,8 +74,8 @@ if (rawPrivateKeyFromEnv && rawPrivateKeyFromEnv.trim() !== '') {
     }
     else {
       // This case means rawPrivateKeyFromEnv was set, but PRIVATE_KEY is still undefined,
-      // implying the startsWith/endsWith check failed. The more detailed warning above already covered this.
-      missingVarsWarn.push('GOOGLE_PRIVATE_KEY (set but failed formatting checks - see detailed warning above)');
+      // implying formatting or PEM marker checks failed. The detailed warning above already covered this.
+      missingVarsWarn.push('GOOGLE_PRIVATE_KEY (set but failed formatting/PEM checks - see detailed warning above)');
     }
   }
   if (missingVarsWarn.length > 0) {
@@ -76,14 +92,13 @@ export function getSheetsClient(): sheets_v4.Sheets | null {
     const missing = [];
     if (!SHEET_ID) missing.push('GOOGLE_SHEET_ID');
     if (!SERVICE_ACCOUNT_EMAIL) missing.push('GOOGLE_SERVICE_ACCOUNT_EMAIL');
-    if (!PRIVATE_KEY) { // This is true if rawPrivateKeyFromEnv was empty, malformed, or not set
+    if (!PRIVATE_KEY) { 
         if (!rawPrivateKeyFromEnv) {
             missing.push('GOOGLE_PRIVATE_KEY (is not set)');
         } else if (rawPrivateKeyFromEnv.trim() === '') {
             missing.push('GOOGLE_PRIVATE_KEY (is set but empty/whitespace)');
         } else {
-            // This means rawPrivateKeyFromEnv was set, but the processing failed (e.g. PEM markers)
-            missing.push('GOOGLE_PRIVATE_KEY (is set but was malformed or failed structural checks - see warnings above)');
+            missing.push('GOOGLE_PRIVATE_KEY (is set but was malformed or failed structural/PEM checks - see warnings above)');
         }
     }
     if (missing.length > 0) console.error(`Detailed missing/problematic environment variables: ${missing.join(', ')}`);
@@ -94,7 +109,7 @@ export function getSheetsClient(): sheets_v4.Sheets | null {
     const auth = new google.auth.GoogleAuth({
       credentials: {
         client_email: SERVICE_ACCOUNT_EMAIL,
-        private_key: PRIVATE_KEY, // Use the processed and validated PRIVATE_KEY
+        private_key: PRIVATE_KEY,
       },
       scopes: ['https://www.googleapis.com/auth/spreadsheets'],
     });
