@@ -181,10 +181,11 @@ module.exports = mod;
 
 var { g: global, __dirname } = __turbopack_context__;
 {
-/* __next_internal_action_entry_do_not_use__ {"0037f11df1b94a50a92c6898ba01abce29af53f46f":"getSheetData","0079297b04cf2e6ac67bc3d4226ca1d592d5c93a2b":"getSheetsClient","4007d5cd0eb95b130803d09428f56df88354821056":"appendSheetRow"} */ __turbopack_context__.s({
+/* __next_internal_action_entry_do_not_use__ {"0037f11df1b94a50a92c6898ba01abce29af53f46f":"getSheetData","0079297b04cf2e6ac67bc3d4226ca1d592d5c93a2b":"getSheetsClient","4007d5cd0eb95b130803d09428f56df88354821056":"appendSheetRow","6070fa3ad8d310c80ea00498f92a8b9acba81291d9":"updateSheetRow"} */ __turbopack_context__.s({
     "appendSheetRow": (()=>appendSheetRow),
     "getSheetData": (()=>getSheetData),
-    "getSheetsClient": (()=>getSheetsClient)
+    "getSheetsClient": (()=>getSheetsClient),
+    "updateSheetRow": (()=>updateSheetRow)
 });
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$server$2d$reference$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/build/webpack/loaders/next-flight-loader/server-reference.js [app-rsc] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$app$2d$render$2f$encryption$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/server/app-render/encryption.js [app-rsc] (ecmascript)");
@@ -333,8 +334,9 @@ async function /*#__TURBOPACK_DISABLE_EXPORT_MERGING__*/ getSheetData() {
         if (missingHeaders.length > 0) {
             console.warn(`[SheetLib:getSheetData] Sheet is missing expected headers: [${missingHeaders.join(', ')}]. Current headers: [${headers.join(', ')}]. Data mapping might be incorrect or incomplete.`);
         }
-        const mappedData = dataRows.map((rowArray)=>{
+        const mappedData = dataRows.map((rowArray, index)=>{
             const rowData = {};
+            rowData.rowIndex = index + 2; // Rows are 1-based, plus 1 for the header row.
             headers.forEach((header, index)=>{
                 const cellValue = rowArray[index] !== undefined && rowArray[index] !== null ? String(rowArray[index]) : '';
                 const key = header;
@@ -465,15 +467,66 @@ async function /*#__TURBOPACK_DISABLE_EXPORT_MERGING__*/ appendSheetRow(rowData)
         return false;
     }
 }
+async function /*#__TURBOPACK_DISABLE_EXPORT_MERGING__*/ updateSheetRow(rowIndex, rowData) {
+    let sheets = null;
+    try {
+        sheets = await getSheetsClient();
+    } catch (clientError) {
+        console.error('[SheetLib:updateSheetRow] Error obtaining Google Sheets client:', clientError.message);
+        return false;
+    }
+    if (!sheets) {
+        console.error("[SheetLib:updateSheetRow] Google Sheets client not available. Cannot update data.");
+        return false;
+    }
+    if (!SHEET_ID) {
+        console.error("[SheetLib:updateSheetRow] ConfigurationError: GOOGLE_SHEET_ID is not configured.");
+        return false;
+    }
+    const sheetName = SHEET_RANGE.split('!')[0] || 'Sheet1';
+    const rangeColumns = SHEET_RANGE.split('!')[1] || 'A:E';
+    const startColumn = rangeColumns.split(':')[0];
+    const updateRange = `${sheetName}!${startColumn}${rowIndex}`;
+    console.log(`[SheetLib:updateSheetRow] Updating range: ${updateRange}`);
+    const values = [
+        rowData['Donor/Opp'],
+        rowData['Action/Next Step'],
+        rowData.Lead,
+        rowData.Priority,
+        rowData.Probability
+    ];
+    try {
+        await sheets.spreadsheets.values.update({
+            spreadsheetId: SHEET_ID,
+            range: updateRange,
+            valueInputOption: 'USER_ENTERED',
+            requestBody: {
+                values: [
+                    values
+                ]
+            }
+        });
+        console.log(`[SheetLib:updateSheetRow] Row ${rowIndex} updated successfully.`);
+        return true;
+    } catch (error) {
+        console.error(`[SheetLib:updateSheetRow] Error updating row ${rowIndex} via Google Sheets API:`, error.message);
+        if (error.response?.data?.error) {
+            console.error('Google API Error:', JSON.stringify(error.response.data.error, null, 2));
+        }
+        return false;
+    }
+}
 ;
 (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$action$2d$validate$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["ensureServerEntryExports"])([
     getSheetsClient,
     getSheetData,
-    appendSheetRow
+    appendSheetRow,
+    updateSheetRow
 ]);
 (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$server$2d$reference$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["registerServerReference"])(getSheetsClient, "0079297b04cf2e6ac67bc3d4226ca1d592d5c93a2b", null);
 (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$server$2d$reference$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["registerServerReference"])(getSheetData, "0037f11df1b94a50a92c6898ba01abce29af53f46f", null);
 (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$server$2d$reference$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["registerServerReference"])(appendSheetRow, "4007d5cd0eb95b130803d09428f56df88354821056", null);
+(0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$server$2d$reference$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["registerServerReference"])(updateSheetRow, "6070fa3ad8d310c80ea00498f92a8b9acba81291d9", null);
 }}),
 "[project]/src/lib/auth.ts [app-rsc] (ecmascript)": ((__turbopack_context__) => {
 "use strict";
@@ -557,7 +610,8 @@ const sheetRowSchema = __TURBOPACK__imported__module__$5b$project$5d2f$node_modu
         errorMap: ()=>({
                 message: 'Please select a valid probability'
             })
-    })
+    }),
+    rowIndex: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$zod$2f$lib$2f$index$2e$mjs__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["z"].coerce.number().int().positive().optional()
 });
 const sheetConfigSchema = __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$zod$2f$lib$2f$index$2e$mjs__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["z"].object({
     sheetId: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$zod$2f$lib$2f$index$2e$mjs__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["z"].string().min(10, 'Sheet ID seems too short. Please check the copied ID.').trim(),
@@ -592,19 +646,19 @@ const sheetConfigSchema = __TURBOPACK__imported__module__$5b$project$5d2f$node_m
 
 var { g: global, __dirname } = __turbopack_context__;
 {
-/* __next_internal_action_entry_do_not_use__ {"00830883cc3e3d4983b359610b1873f6aa5b33c4a0":"logoutAction","40b66d6665c72852c98c72ade3698f49117a59a1a7":"testSheetConnectionAction","6084a6390a3565620cbc23c59969a01ccc07f96681":"submitDataAction","60aa8be677b96db11da812d84f364cdfd2662320a2":"loginAction","60b5c37fd5688750901aa043ff1da817ffbb8ef2d4":"saveSheetConfigAction"} */ __turbopack_context__.s({
+/* __next_internal_action_entry_do_not_use__ {"00830883cc3e3d4983b359610b1873f6aa5b33c4a0":"logoutAction","40b66d6665c72852c98c72ade3698f49117a59a1a7":"testSheetConnectionAction","601459a04e2c940f9094b1694846d89f07905e264b":"upsertDataAction","60aa8be677b96db11da812d84f364cdfd2662320a2":"loginAction","60b5c37fd5688750901aa043ff1da817ffbb8ef2d4":"saveSheetConfigAction"} */ __turbopack_context__.s({
     "loginAction": (()=>loginAction),
     "logoutAction": (()=>logoutAction),
     "saveSheetConfigAction": (()=>saveSheetConfigAction),
-    "submitDataAction": (()=>submitDataAction),
-    "testSheetConnectionAction": (()=>testSheetConnectionAction)
+    "testSheetConnectionAction": (()=>testSheetConnectionAction),
+    "upsertDataAction": (()=>upsertDataAction)
 });
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$server$2d$reference$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/build/webpack/loaders/next-flight-loader/server-reference.js [app-rsc] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$app$2d$render$2f$encryption$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/server/app-render/encryption.js [app-rsc] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$cache$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/cache.js [app-rsc] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$auth$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/lib/auth.ts [app-rsc] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$validators$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/lib/validators.ts [app-rsc] (ecmascript)"); // Added sheetConfigSchema
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$sheets$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/lib/sheets.ts [app-rsc] (ecmascript)"); // Added getSheetsClient
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$sheets$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/lib/sheets.ts [app-rsc] (ecmascript)"); // Added getSheetsClient and updateSheetRow
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$action$2d$validate$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/build/webpack/loaders/next-flight-loader/action-validate.js [app-rsc] (ecmascript)");
 ;
 ;
@@ -651,14 +705,15 @@ async function /*#__TURBOPACK_DISABLE_EXPORT_MERGING__*/ logoutAction() {
     await (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$auth$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["clearAuthCookie"])();
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$cache$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["revalidatePath"])('/admin');
 }
-async function /*#__TURBOPACK_DISABLE_EXPORT_MERGING__*/ submitDataAction(prevState, formData) {
+async function /*#__TURBOPACK_DISABLE_EXPORT_MERGING__*/ upsertDataAction(prevState, formData) {
     try {
         const parsed = __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$validators$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["sheetRowSchema"].safeParse({
             'Donor/Opp': formData.get('Donor/Opp'),
             'Action/Next Step': formData.get('Action/Next Step'),
             Lead: formData.get('Lead'),
             Priority: formData.get('Priority'),
-            Probability: formData.get('Probability')
+            Probability: formData.get('Probability'),
+            rowIndex: formData.get('rowIndex')
         });
         if (!parsed.success) {
             console.log("Validation errors:", parsed.error.flatten().fieldErrors);
@@ -668,24 +723,33 @@ async function /*#__TURBOPACK_DISABLE_EXPORT_MERGING__*/ submitDataAction(prevSt
                 errors: parsed.error.flatten().fieldErrors
             };
         }
-        const dataToAppend = parsed.data;
+        const dataToUpsert = parsed.data;
+        const { rowIndex, ...rowData } = dataToUpsert;
         if (!process.env.GOOGLE_SHEET_ID || !process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || !process.env.GOOGLE_PRIVATE_KEY) {
             return {
                 message: 'Google Sheet connection is not configured on the server.',
                 success: false
             };
         }
-        const success = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$sheets$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["appendSheetRow"])(dataToAppend);
+        let success = false;
+        let actionVerb = '';
+        if (rowIndex) {
+            actionVerb = 'updated';
+            success = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$sheets$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["updateSheetRow"])(rowIndex, rowData);
+        } else {
+            actionVerb = 'submitted';
+            success = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$sheets$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["appendSheetRow"])(rowData);
+        }
         if (success) {
-            // Removed revalidatePath('/admin'); It will be handled client-side to prevent potential logout issues.
             (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$cache$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["revalidatePath"])('/'); // Revalidate public dashboard
+            (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$cache$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["revalidatePath"])('/admin'); // Revalidate admin dashboard preview
             return {
-                message: 'Data submitted successfully!',
+                message: `Data ${actionVerb} successfully!`,
                 success: true
             };
         } else {
             return {
-                message: 'Failed to submit data to Google Sheet. Please check the server console logs for more specific error details from the Google Sheets API.',
+                message: `Failed to ${actionVerb === 'updated' ? 'update' : 'submit'} data to Google Sheet. Please check the server console logs for more specific error details from the Google Sheets API.`,
                 success: false
             };
         }
@@ -804,13 +868,13 @@ async function /*#__TURBOPACK_DISABLE_EXPORT_MERGING__*/ testSheetConnectionActi
 (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$action$2d$validate$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["ensureServerEntryExports"])([
     loginAction,
     logoutAction,
-    submitDataAction,
+    upsertDataAction,
     saveSheetConfigAction,
     testSheetConnectionAction
 ]);
 (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$server$2d$reference$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["registerServerReference"])(loginAction, "60aa8be677b96db11da812d84f364cdfd2662320a2", null);
 (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$server$2d$reference$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["registerServerReference"])(logoutAction, "00830883cc3e3d4983b359610b1873f6aa5b33c4a0", null);
-(0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$server$2d$reference$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["registerServerReference"])(submitDataAction, "6084a6390a3565620cbc23c59969a01ccc07f96681", null);
+(0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$server$2d$reference$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["registerServerReference"])(upsertDataAction, "601459a04e2c940f9094b1694846d89f07905e264b", null);
 (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$server$2d$reference$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["registerServerReference"])(saveSheetConfigAction, "60b5c37fd5688750901aa043ff1da817ffbb8ef2d4", null);
 (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$server$2d$reference$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["registerServerReference"])(testSheetConnectionAction, "40b66d6665c72852c98c72ade3698f49117a59a1a7", null);
 }}),
@@ -820,6 +884,7 @@ async function /*#__TURBOPACK_DISABLE_EXPORT_MERGING__*/ testSheetConnectionActi
 var { g: global, __dirname } = __turbopack_context__;
 {
 __turbopack_context__.s({});
+;
 ;
 ;
 ;
@@ -850,7 +915,8 @@ __turbopack_context__.s({
     "00830883cc3e3d4983b359610b1873f6aa5b33c4a0": (()=>__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$actions$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["logoutAction"]),
     "4007d5cd0eb95b130803d09428f56df88354821056": (()=>__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$sheets$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["appendSheetRow"]),
     "40b66d6665c72852c98c72ade3698f49117a59a1a7": (()=>__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$actions$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["testSheetConnectionAction"]),
-    "6084a6390a3565620cbc23c59969a01ccc07f96681": (()=>__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$actions$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["submitDataAction"]),
+    "601459a04e2c940f9094b1694846d89f07905e264b": (()=>__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$actions$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["upsertDataAction"]),
+    "6070fa3ad8d310c80ea00498f92a8b9acba81291d9": (()=>__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$sheets$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["updateSheetRow"]),
     "60aa8be677b96db11da812d84f364cdfd2662320a2": (()=>__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$actions$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["loginAction"]),
     "60b5c37fd5688750901aa043ff1da817ffbb8ef2d4": (()=>__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$actions$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["saveSheetConfigAction"])
 });
@@ -869,7 +935,8 @@ __turbopack_context__.s({
     "00830883cc3e3d4983b359610b1873f6aa5b33c4a0": (()=>__TURBOPACK__imported__module__$5b$project$5d2f2e$next$2d$internal$2f$server$2f$app$2f$admin$2f$page$2f$actions$2e$js__$7b$__ACTIONS_MODULE0__$3d3e$__$225b$project$5d2f$src$2f$lib$2f$sheets$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29222c$__ACTIONS_MODULE1__$3d3e$__$225b$project$5d2f$src$2f$lib$2f$actions$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$2922$__$7d$__$5b$app$2d$rsc$5d$__$28$server__actions__loader$2c$__ecmascript$29$__$3c$exports$3e$__["00830883cc3e3d4983b359610b1873f6aa5b33c4a0"]),
     "4007d5cd0eb95b130803d09428f56df88354821056": (()=>__TURBOPACK__imported__module__$5b$project$5d2f2e$next$2d$internal$2f$server$2f$app$2f$admin$2f$page$2f$actions$2e$js__$7b$__ACTIONS_MODULE0__$3d3e$__$225b$project$5d2f$src$2f$lib$2f$sheets$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29222c$__ACTIONS_MODULE1__$3d3e$__$225b$project$5d2f$src$2f$lib$2f$actions$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$2922$__$7d$__$5b$app$2d$rsc$5d$__$28$server__actions__loader$2c$__ecmascript$29$__$3c$exports$3e$__["4007d5cd0eb95b130803d09428f56df88354821056"]),
     "40b66d6665c72852c98c72ade3698f49117a59a1a7": (()=>__TURBOPACK__imported__module__$5b$project$5d2f2e$next$2d$internal$2f$server$2f$app$2f$admin$2f$page$2f$actions$2e$js__$7b$__ACTIONS_MODULE0__$3d3e$__$225b$project$5d2f$src$2f$lib$2f$sheets$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29222c$__ACTIONS_MODULE1__$3d3e$__$225b$project$5d2f$src$2f$lib$2f$actions$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$2922$__$7d$__$5b$app$2d$rsc$5d$__$28$server__actions__loader$2c$__ecmascript$29$__$3c$exports$3e$__["40b66d6665c72852c98c72ade3698f49117a59a1a7"]),
-    "6084a6390a3565620cbc23c59969a01ccc07f96681": (()=>__TURBOPACK__imported__module__$5b$project$5d2f2e$next$2d$internal$2f$server$2f$app$2f$admin$2f$page$2f$actions$2e$js__$7b$__ACTIONS_MODULE0__$3d3e$__$225b$project$5d2f$src$2f$lib$2f$sheets$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29222c$__ACTIONS_MODULE1__$3d3e$__$225b$project$5d2f$src$2f$lib$2f$actions$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$2922$__$7d$__$5b$app$2d$rsc$5d$__$28$server__actions__loader$2c$__ecmascript$29$__$3c$exports$3e$__["6084a6390a3565620cbc23c59969a01ccc07f96681"]),
+    "601459a04e2c940f9094b1694846d89f07905e264b": (()=>__TURBOPACK__imported__module__$5b$project$5d2f2e$next$2d$internal$2f$server$2f$app$2f$admin$2f$page$2f$actions$2e$js__$7b$__ACTIONS_MODULE0__$3d3e$__$225b$project$5d2f$src$2f$lib$2f$sheets$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29222c$__ACTIONS_MODULE1__$3d3e$__$225b$project$5d2f$src$2f$lib$2f$actions$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$2922$__$7d$__$5b$app$2d$rsc$5d$__$28$server__actions__loader$2c$__ecmascript$29$__$3c$exports$3e$__["601459a04e2c940f9094b1694846d89f07905e264b"]),
+    "6070fa3ad8d310c80ea00498f92a8b9acba81291d9": (()=>__TURBOPACK__imported__module__$5b$project$5d2f2e$next$2d$internal$2f$server$2f$app$2f$admin$2f$page$2f$actions$2e$js__$7b$__ACTIONS_MODULE0__$3d3e$__$225b$project$5d2f$src$2f$lib$2f$sheets$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29222c$__ACTIONS_MODULE1__$3d3e$__$225b$project$5d2f$src$2f$lib$2f$actions$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$2922$__$7d$__$5b$app$2d$rsc$5d$__$28$server__actions__loader$2c$__ecmascript$29$__$3c$exports$3e$__["6070fa3ad8d310c80ea00498f92a8b9acba81291d9"]),
     "60aa8be677b96db11da812d84f364cdfd2662320a2": (()=>__TURBOPACK__imported__module__$5b$project$5d2f2e$next$2d$internal$2f$server$2f$app$2f$admin$2f$page$2f$actions$2e$js__$7b$__ACTIONS_MODULE0__$3d3e$__$225b$project$5d2f$src$2f$lib$2f$sheets$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29222c$__ACTIONS_MODULE1__$3d3e$__$225b$project$5d2f$src$2f$lib$2f$actions$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$2922$__$7d$__$5b$app$2d$rsc$5d$__$28$server__actions__loader$2c$__ecmascript$29$__$3c$exports$3e$__["60aa8be677b96db11da812d84f364cdfd2662320a2"]),
     "60b5c37fd5688750901aa043ff1da817ffbb8ef2d4": (()=>__TURBOPACK__imported__module__$5b$project$5d2f2e$next$2d$internal$2f$server$2f$app$2f$admin$2f$page$2f$actions$2e$js__$7b$__ACTIONS_MODULE0__$3d3e$__$225b$project$5d2f$src$2f$lib$2f$sheets$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29222c$__ACTIONS_MODULE1__$3d3e$__$225b$project$5d2f$src$2f$lib$2f$actions$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$2922$__$7d$__$5b$app$2d$rsc$5d$__$28$server__actions__loader$2c$__ecmascript$29$__$3c$exports$3e$__["60b5c37fd5688750901aa043ff1da817ffbb8ef2d4"])
 });
@@ -1165,7 +1232,8 @@ async function AdminDashboardDisplayWrapper() {
         }, this);
     }
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$rsc$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$dashboard$2d$table$2e$tsx__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["DashboardTable"], {
-        initialData: tableData
+        initialData: tableData,
+        isEditable: true
     }, void 0, false, {
         fileName: "[project]/src/components/admin-dashboard-display-wrapper.tsx",
         lineNumber: 83,

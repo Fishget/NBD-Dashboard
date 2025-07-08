@@ -150,7 +150,12 @@ function EditRowDialog({ row, isOpen, onClose }: { row: SheetRow; isOpen: boolea
                     render={({ field }) => (
                         <FormItem>
                         <FormLabel>Priority</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            defaultValue={field.value}
+                            name={field.name}
+                        >
                             <FormControl>
                             <SelectTrigger>
                                 <SelectValue placeholder="Select Priority" />
@@ -173,7 +178,12 @@ function EditRowDialog({ row, isOpen, onClose }: { row: SheetRow; isOpen: boolea
                     render={({ field }) => (
                         <FormItem>
                         <FormLabel>Probability</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            defaultValue={field.value}
+                            name={field.name}
+                        >
                             <FormControl>
                             <SelectTrigger>
                                 <SelectValue placeholder="Select Probability" />

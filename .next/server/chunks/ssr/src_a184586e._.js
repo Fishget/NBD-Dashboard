@@ -2163,7 +2163,9 @@ function EditRowDialog({ row, isOpen, onClose }) {
                                                     }, void 0),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Select"], {
                                                         onValueChange: field.onChange,
+                                                        value: field.value,
                                                         defaultValue: field.value,
+                                                        name: field.name,
                                                         children: [
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$form$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["FormControl"], {
                                                                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SelectTrigger"], {
@@ -2171,17 +2173,17 @@ function EditRowDialog({ row, isOpen, onClose }) {
                                                                         placeholder: "Select Priority"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/src/components/dashboard-table.tsx",
-                                                                        lineNumber: 156,
+                                                                        lineNumber: 161,
                                                                         columnNumber: 33
                                                                     }, void 0)
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/components/dashboard-table.tsx",
-                                                                    lineNumber: 155,
+                                                                    lineNumber: 160,
                                                                     columnNumber: 29
                                                                 }, void 0)
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/components/dashboard-table.tsx",
-                                                                lineNumber: 154,
+                                                                lineNumber: 159,
                                                                 columnNumber: 29
                                                             }, void 0),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SelectContent"], {
@@ -2191,7 +2193,7 @@ function EditRowDialog({ row, isOpen, onClose }) {
                                                                         children: "High"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/src/components/dashboard-table.tsx",
-                                                                        lineNumber: 160,
+                                                                        lineNumber: 165,
                                                                         columnNumber: 29
                                                                     }, void 0),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SelectItem"], {
@@ -2199,7 +2201,7 @@ function EditRowDialog({ row, isOpen, onClose }) {
                                                                         children: "Medium"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/src/components/dashboard-table.tsx",
-                                                                        lineNumber: 161,
+                                                                        lineNumber: 166,
                                                                         columnNumber: 29
                                                                     }, void 0),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SelectItem"], {
@@ -2207,13 +2209,13 @@ function EditRowDialog({ row, isOpen, onClose }) {
                                                                         children: "Low"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/src/components/dashboard-table.tsx",
-                                                                        lineNumber: 162,
+                                                                        lineNumber: 167,
                                                                         columnNumber: 29
                                                                     }, void 0)
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/src/components/dashboard-table.tsx",
-                                                                lineNumber: 159,
+                                                                lineNumber: 164,
                                                                 columnNumber: 29
                                                             }, void 0)
                                                         ]
@@ -2224,7 +2226,7 @@ function EditRowDialog({ row, isOpen, onClose }) {
                                                     }, void 0),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$form$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["FormMessage"], {}, void 0, false, {
                                                         fileName: "[project]/src/components/dashboard-table.tsx",
-                                                        lineNumber: 165,
+                                                        lineNumber: 170,
                                                         columnNumber: 25
                                                     }, void 0)
                                                 ]
@@ -2247,12 +2249,14 @@ function EditRowDialog({ row, isOpen, onClose }) {
                                                         children: "Probability"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/components/dashboard-table.tsx",
-                                                        lineNumber: 175,
+                                                        lineNumber: 180,
                                                         columnNumber: 25
                                                     }, void 0),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Select"], {
                                                         onValueChange: field.onChange,
+                                                        value: field.value,
                                                         defaultValue: field.value,
+                                                        name: field.name,
                                                         children: [
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$form$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["FormControl"], {
                                                                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SelectTrigger"], {
@@ -2260,17 +2264,17 @@ function EditRowDialog({ row, isOpen, onClose }) {
                                                                         placeholder: "Select Probability"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/src/components/dashboard-table.tsx",
-                                                                        lineNumber: 179,
+                                                                        lineNumber: 189,
                                                                         columnNumber: 33
                                                                     }, void 0)
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/components/dashboard-table.tsx",
-                                                                    lineNumber: 178,
+                                                                    lineNumber: 188,
                                                                     columnNumber: 29
                                                                 }, void 0)
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/components/dashboard-table.tsx",
-                                                                lineNumber: 177,
+                                                                lineNumber: 187,
                                                                 columnNumber: 29
                                                             }, void 0),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SelectContent"], {
@@ -2280,7 +2284,7 @@ function EditRowDialog({ row, isOpen, onClose }) {
                                                                         children: "High"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/src/components/dashboard-table.tsx",
-                                                                        lineNumber: 183,
+                                                                        lineNumber: 193,
                                                                         columnNumber: 29
                                                                     }, void 0),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SelectItem"], {
@@ -2288,7 +2292,7 @@ function EditRowDialog({ row, isOpen, onClose }) {
                                                                         children: "Medium"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/src/components/dashboard-table.tsx",
-                                                                        lineNumber: 184,
+                                                                        lineNumber: 194,
                                                                         columnNumber: 29
                                                                     }, void 0),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SelectItem"], {
@@ -2296,35 +2300,35 @@ function EditRowDialog({ row, isOpen, onClose }) {
                                                                         children: "Low"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/src/components/dashboard-table.tsx",
-                                                                        lineNumber: 185,
+                                                                        lineNumber: 195,
                                                                         columnNumber: 29
                                                                     }, void 0)
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/src/components/dashboard-table.tsx",
-                                                                lineNumber: 182,
+                                                                lineNumber: 192,
                                                                 columnNumber: 29
                                                             }, void 0)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/components/dashboard-table.tsx",
-                                                        lineNumber: 176,
+                                                        lineNumber: 181,
                                                         columnNumber: 25
                                                     }, void 0),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$form$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["FormMessage"], {}, void 0, false, {
                                                         fileName: "[project]/src/components/dashboard-table.tsx",
-                                                        lineNumber: 188,
+                                                        lineNumber: 198,
                                                         columnNumber: 25
                                                     }, void 0)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/components/dashboard-table.tsx",
-                                                lineNumber: 174,
+                                                lineNumber: 179,
                                                 columnNumber: 25
                                             }, void 0)
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/dashboard-table.tsx",
-                                        lineNumber: 170,
+                                        lineNumber: 175,
                                         columnNumber: 17
                                     }, this)
                                 ]
@@ -2343,23 +2347,23 @@ function EditRowDialog({ row, isOpen, onClose }) {
                                             children: "Cancel"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/dashboard-table.tsx",
-                                            lineNumber: 196,
+                                            lineNumber: 206,
                                             columnNumber: 19
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/dashboard-table.tsx",
-                                        lineNumber: 195,
+                                        lineNumber: 205,
                                         columnNumber: 16
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(SubmitButton, {}, void 0, false, {
                                         fileName: "[project]/src/components/dashboard-table.tsx",
-                                        lineNumber: 198,
+                                        lineNumber: 208,
                                         columnNumber: 16
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/dashboard-table.tsx",
-                                lineNumber: 194,
+                                lineNumber: 204,
                                 columnNumber: 13
                             }, this)
                         ]
@@ -2555,12 +2559,12 @@ function DashboardTable({ initialData, isEditable = false }) {
                         className: "h-10 w-[250px] bg-muted rounded animate-pulse"
                     }, void 0, false, {
                         fileName: "[project]/src/components/dashboard-table.tsx",
-                        lineNumber: 359,
+                        lineNumber: 369,
                         columnNumber: 11
                     }, this)
                 }, void 0, false, {
                     fileName: "[project]/src/components/dashboard-table.tsx",
-                    lineNumber: 357,
+                    lineNumber: 367,
                     columnNumber: 9
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2574,22 +2578,22 @@ function DashboardTable({ initialData, isEditable = false }) {
                                                 className: "h-4 w-[100px] bg-muted rounded animate-pulse"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/dashboard-table.tsx",
-                                                lineNumber: 367,
+                                                lineNumber: 377,
                                                 columnNumber: 21
                                             }, this)
                                         }, col.key, false, {
                                             fileName: "[project]/src/components/dashboard-table.tsx",
-                                            lineNumber: 366,
+                                            lineNumber: 376,
                                             columnNumber: 19
                                         }, this))
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/dashboard-table.tsx",
-                                    lineNumber: 364,
+                                    lineNumber: 374,
                                     columnNumber: 15
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/components/dashboard-table.tsx",
-                                lineNumber: 363,
+                                lineNumber: 373,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableBody"], {
@@ -2601,39 +2605,39 @@ function DashboardTable({ initialData, isEditable = false }) {
                                                     className: "h-4 w-full bg-muted rounded animate-pulse"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/dashboard-table.tsx",
-                                                    lineNumber: 377,
+                                                    lineNumber: 387,
                                                     columnNumber: 23
                                                 }, this)
                                             }, `skeleton-cell-${col.key}-${i}`, false, {
                                                 fileName: "[project]/src/components/dashboard-table.tsx",
-                                                lineNumber: 376,
+                                                lineNumber: 386,
                                                 columnNumber: 21
                                             }, this))
                                     }, `skeleton-${i}`, false, {
                                         fileName: "[project]/src/components/dashboard-table.tsx",
-                                        lineNumber: 374,
+                                        lineNumber: 384,
                                         columnNumber: 17
                                     }, this))
                             }, void 0, false, {
                                 fileName: "[project]/src/components/dashboard-table.tsx",
-                                lineNumber: 372,
+                                lineNumber: 382,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/dashboard-table.tsx",
-                        lineNumber: 362,
+                        lineNumber: 372,
                         columnNumber: 11
                     }, this)
                 }, void 0, false, {
                     fileName: "[project]/src/components/dashboard-table.tsx",
-                    lineNumber: 361,
+                    lineNumber: 371,
                     columnNumber: 9
                 }, this)
             ]
         }, void 0, true, {
             fileName: "[project]/src/components/dashboard-table.tsx",
-            lineNumber: 356,
+            lineNumber: 366,
             columnNumber: 7
         }, this);
     }
@@ -2654,20 +2658,20 @@ function DashboardTable({ initialData, isEditable = false }) {
                                         className: "mr-2 h-4 w-4"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/dashboard-table.tsx",
-                                        lineNumber: 395,
+                                        lineNumber: 405,
                                         columnNumber: 27
                                     }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$eye$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Eye$3e$__["Eye"], {
                                         className: "mr-2 h-4 w-4"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/dashboard-table.tsx",
-                                        lineNumber: 395,
+                                        lineNumber: 405,
                                         columnNumber: 65
                                     }, this),
                                     showCharts ? 'Hide Charts' : 'Show Charts'
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/dashboard-table.tsx",
-                                lineNumber: 394,
+                                lineNumber: 404,
                                 columnNumber: 13
                             }, this),
                             chartFilter && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
@@ -2679,20 +2683,20 @@ function DashboardTable({ initialData, isEditable = false }) {
                                         className: "mr-2 h-4 w-4"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/dashboard-table.tsx",
-                                        lineNumber: 400,
+                                        lineNumber: 410,
                                         columnNumber: 17
                                     }, this),
                                     "Reset Chart Filter"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/dashboard-table.tsx",
-                                lineNumber: 399,
+                                lineNumber: 409,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/dashboard-table.tsx",
-                        lineNumber: 393,
+                        lineNumber: 403,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -2703,13 +2707,13 @@ function DashboardTable({ initialData, isEditable = false }) {
                         className: "max-w-xs w-full sm:w-auto"
                     }, void 0, false, {
                         fileName: "[project]/src/components/dashboard-table.tsx",
-                        lineNumber: 405,
+                        lineNumber: 415,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/dashboard-table.tsx",
-                lineNumber: 392,
+                lineNumber: 402,
                 columnNumber: 7
             }, this),
             showCharts && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Card"], {
@@ -2723,19 +2727,19 @@ function DashboardTable({ initialData, isEditable = false }) {
                                     className: "mr-2 h-5 w-5 text-primary"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/dashboard-table.tsx",
-                                    lineNumber: 418,
+                                    lineNumber: 428,
                                     columnNumber: 15
                                 }, this),
                                 "Opportunities Overview"
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/dashboard-table.tsx",
-                            lineNumber: 417,
+                            lineNumber: 427,
                             columnNumber: 13
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/components/dashboard-table.tsx",
-                        lineNumber: 416,
+                        lineNumber: 426,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -2750,7 +2754,7 @@ function DashboardTable({ initialData, isEditable = false }) {
                                         children: "Priority x Probability Matrix"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/dashboard-table.tsx",
-                                        lineNumber: 425,
+                                        lineNumber: 435,
                                         columnNumber: 17
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2763,19 +2767,19 @@ function DashboardTable({ initialData, isEditable = false }) {
                                                 currentFilter: chartFilter
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/dashboard-table.tsx",
-                                                lineNumber: 427,
+                                                lineNumber: 437,
                                                 columnNumber: 21
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/components/dashboard-table.tsx",
-                                        lineNumber: 426,
+                                        lineNumber: 436,
                                         columnNumber: 17
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/dashboard-table.tsx",
-                                lineNumber: 424,
+                                lineNumber: 434,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2789,7 +2793,7 @@ function DashboardTable({ initialData, isEditable = false }) {
                                                 children: "Opportunities by Priority"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/dashboard-table.tsx",
-                                                lineNumber: 434,
+                                                lineNumber: 444,
                                                 columnNumber: 17
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$charts$2f$opportunities$2d$by$2d$priority$2d$chart$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["OpportunitiesByPriorityChart"], {
@@ -2798,13 +2802,13 @@ function DashboardTable({ initialData, isEditable = false }) {
                                                 currentFilter: chartFilter
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/dashboard-table.tsx",
-                                                lineNumber: 435,
+                                                lineNumber: 445,
                                                 columnNumber: 17
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/components/dashboard-table.tsx",
-                                        lineNumber: 433,
+                                        lineNumber: 443,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2815,7 +2819,7 @@ function DashboardTable({ initialData, isEditable = false }) {
                                                 children: "Opportunities by Probability"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/dashboard-table.tsx",
-                                                lineNumber: 438,
+                                                lineNumber: 448,
                                                 columnNumber: 17
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$charts$2f$opportunities$2d$by$2d$probability$2d$chart$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["OpportunitiesByProbabilityChart"], {
@@ -2824,31 +2828,31 @@ function DashboardTable({ initialData, isEditable = false }) {
                                                 currentFilter: chartFilter
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/dashboard-table.tsx",
-                                                lineNumber: 439,
+                                                lineNumber: 449,
                                                 columnNumber: 17
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/components/dashboard-table.tsx",
-                                        lineNumber: 437,
+                                        lineNumber: 447,
                                         columnNumber: 15
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/dashboard-table.tsx",
-                                lineNumber: 432,
+                                lineNumber: 442,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/dashboard-table.tsx",
-                        lineNumber: 422,
+                        lineNumber: 432,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/dashboard-table.tsx",
-                lineNumber: 415,
+                lineNumber: 425,
                 columnNumber: 9
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2862,7 +2866,7 @@ function DashboardTable({ initialData, isEditable = false }) {
                                             children: col.label
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/dashboard-table.tsx",
-                                            lineNumber: 453,
+                                            lineNumber: 463,
                                             columnNumber: 25
                                         }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
                                             variant: "ghost",
@@ -2874,28 +2878,28 @@ function DashboardTable({ initialData, isEditable = false }) {
                                                     className: `ml-2 h-3 w-3 ${sortKey === col.key ? 'opacity-100' : 'opacity-30'}`
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/dashboard-table.tsx",
-                                                    lineNumber: 461,
+                                                    lineNumber: 471,
                                                     columnNumber: 29
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/components/dashboard-table.tsx",
-                                            lineNumber: 455,
+                                            lineNumber: 465,
                                             columnNumber: 25
                                         }, this)
                                     }, col.key, false, {
                                         fileName: "[project]/src/components/dashboard-table.tsx",
-                                        lineNumber: 451,
+                                        lineNumber: 461,
                                         columnNumber: 18
                                     }, this))
                             }, void 0, false, {
                                 fileName: "[project]/src/components/dashboard-table.tsx",
-                                lineNumber: 449,
+                                lineNumber: 459,
                                 columnNumber: 13
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/src/components/dashboard-table.tsx",
-                            lineNumber: 448,
+                            lineNumber: 458,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableBody"], {
@@ -2912,7 +2916,7 @@ function DashboardTable({ initialData, isEditable = false }) {
                                                         className: "h-4 w-4"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/components/dashboard-table.tsx",
-                                                        lineNumber: 482,
+                                                        lineNumber: 492,
                                                         columnNumber: 29
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -2920,23 +2924,23 @@ function DashboardTable({ initialData, isEditable = false }) {
                                                         children: "Edit Row"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/components/dashboard-table.tsx",
-                                                        lineNumber: 483,
+                                                        lineNumber: 493,
                                                         columnNumber: 29
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/components/dashboard-table.tsx",
-                                                lineNumber: 481,
+                                                lineNumber: 491,
                                                 columnNumber: 27
                                             }, this) : String(row[col.key])
                                         }, col.key, false, {
                                             fileName: "[project]/src/components/dashboard-table.tsx",
-                                            lineNumber: 473,
+                                            lineNumber: 483,
                                             columnNumber: 22
                                         }, this))
                                 }, index, false, {
                                     fileName: "[project]/src/components/dashboard-table.tsx",
-                                    lineNumber: 471,
+                                    lineNumber: 481,
                                     columnNumber: 17
                                 }, this)) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableRow"], {
                                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableCell"], {
@@ -2945,17 +2949,17 @@ function DashboardTable({ initialData, isEditable = false }) {
                                     children: (initialData || []).length === 0 ? "No data available in the sheet." : "No results found for your filter(s)."
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/dashboard-table.tsx",
-                                    lineNumber: 494,
+                                    lineNumber: 504,
                                     columnNumber: 17
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/components/dashboard-table.tsx",
-                                lineNumber: 493,
+                                lineNumber: 503,
                                 columnNumber: 15
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/src/components/dashboard-table.tsx",
-                            lineNumber: 468,
+                            lineNumber: 478,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableFooter"], {
@@ -2976,7 +2980,7 @@ function DashboardTable({ initialData, isEditable = false }) {
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/components/dashboard-table.tsx",
-                                                lineNumber: 504,
+                                                lineNumber: 514,
                                                 columnNumber: 21
                                             }, this),
                                             (sortedData || []).length > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2990,7 +2994,7 @@ function DashboardTable({ initialData, isEditable = false }) {
                                                                 children: "Rows per page"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/components/dashboard-table.tsx",
-                                                                lineNumber: 511,
+                                                                lineNumber: 521,
                                                                 columnNumber: 33
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Select"], {
@@ -3007,13 +3011,13 @@ function DashboardTable({ initialData, isEditable = false }) {
                                                                                 placeholder: `${rowsPerPage}`
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/src/components/dashboard-table.tsx",
-                                                                                lineNumber: 519,
+                                                                                lineNumber: 529,
                                                                                 columnNumber: 41
                                                                             }, this)
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/src/components/dashboard-table.tsx",
-                                                                        lineNumber: 518,
+                                                                        lineNumber: 528,
                                                                         columnNumber: 37
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SelectContent"], {
@@ -3028,24 +3032,24 @@ function DashboardTable({ initialData, isEditable = false }) {
                                                                                 children: pageSize
                                                                             }, pageSize, false, {
                                                                                 fileName: "[project]/src/components/dashboard-table.tsx",
-                                                                                lineNumber: 523,
+                                                                                lineNumber: 533,
                                                                                 columnNumber: 41
                                                                             }, this))
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/src/components/dashboard-table.tsx",
-                                                                        lineNumber: 521,
+                                                                        lineNumber: 531,
                                                                         columnNumber: 37
                                                                     }, this)
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/src/components/dashboard-table.tsx",
-                                                                lineNumber: 512,
+                                                                lineNumber: 522,
                                                                 columnNumber: 33
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/components/dashboard-table.tsx",
-                                                        lineNumber: 510,
+                                                        lineNumber: 520,
                                                         columnNumber: 29
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3058,7 +3062,7 @@ function DashboardTable({ initialData, isEditable = false }) {
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/components/dashboard-table.tsx",
-                                                        lineNumber: 532,
+                                                        lineNumber: 542,
                                                         columnNumber: 29
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3076,20 +3080,20 @@ function DashboardTable({ initialData, isEditable = false }) {
                                                                         children: "Go to previous page"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/src/components/dashboard-table.tsx",
-                                                                        lineNumber: 544,
+                                                                        lineNumber: 554,
                                                                         columnNumber: 37
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$chevron$2d$left$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__ChevronLeft$3e$__["ChevronLeft"], {
                                                                         className: "h-3.5 w-3.5 sm:h-4 sm:w-4"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/src/components/dashboard-table.tsx",
-                                                                        lineNumber: 545,
+                                                                        lineNumber: 555,
                                                                         columnNumber: 37
                                                                     }, this)
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/src/components/dashboard-table.tsx",
-                                                                lineNumber: 538,
+                                                                lineNumber: 548,
                                                                 columnNumber: 33
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
@@ -3104,64 +3108,64 @@ function DashboardTable({ initialData, isEditable = false }) {
                                                                         children: "Go to next page"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/src/components/dashboard-table.tsx",
-                                                                        lineNumber: 553,
+                                                                        lineNumber: 563,
                                                                         columnNumber: 37
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$chevron$2d$right$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__ChevronRight$3e$__["ChevronRight"], {
                                                                         className: "h-3.5 w-3.5 sm:h-4 sm:w-4"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/src/components/dashboard-table.tsx",
-                                                                        lineNumber: 554,
+                                                                        lineNumber: 564,
                                                                         columnNumber: 37
                                                                     }, this)
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/src/components/dashboard-table.tsx",
-                                                                lineNumber: 547,
+                                                                lineNumber: 557,
                                                                 columnNumber: 33
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/components/dashboard-table.tsx",
-                                                        lineNumber: 537,
+                                                        lineNumber: 547,
                                                         columnNumber: 29
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/components/dashboard-table.tsx",
-                                                lineNumber: 508,
+                                                lineNumber: 518,
                                                 columnNumber: 25
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/components/dashboard-table.tsx",
-                                        lineNumber: 503,
+                                        lineNumber: 513,
                                         columnNumber: 17
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/dashboard-table.tsx",
-                                    lineNumber: 502,
+                                    lineNumber: 512,
                                     columnNumber: 16
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/components/dashboard-table.tsx",
-                                lineNumber: 501,
+                                lineNumber: 511,
                                 columnNumber: 14
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/src/components/dashboard-table.tsx",
-                            lineNumber: 500,
+                            lineNumber: 510,
                             columnNumber: 12
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/components/dashboard-table.tsx",
-                    lineNumber: 447,
+                    lineNumber: 457,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/components/dashboard-table.tsx",
-                lineNumber: 446,
+                lineNumber: 456,
                 columnNumber: 7
             }, this),
             editingRow && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(EditRowDialog, {
@@ -3170,13 +3174,13 @@ function DashboardTable({ initialData, isEditable = false }) {
                 onClose: ()=>setEditingRow(null)
             }, void 0, false, {
                 fileName: "[project]/src/components/dashboard-table.tsx",
-                lineNumber: 567,
+                lineNumber: 577,
                 columnNumber: 9
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/components/dashboard-table.tsx",
-        lineNumber: 391,
+        lineNumber: 401,
         columnNumber: 5
     }, this);
 }
