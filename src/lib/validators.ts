@@ -1,3 +1,4 @@
+
 import { z } from 'zod';
 
 export const loginSchema = z.object({
@@ -17,6 +18,7 @@ export const sheetRowSchema = z.object({
   Probability: z.enum(['High', 'Medium', 'Low'], {
     errorMap: () => ({ message: 'Please select a valid probability' }),
   }),
+  rowIndex: z.coerce.number().int().positive().optional(),
 });
 
 export type SheetRowFormData = z.infer<typeof sheetRowSchema>;

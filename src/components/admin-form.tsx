@@ -1,10 +1,11 @@
+
 'use client';
 
 import { useActionState } from 'react'; 
 import { useFormStatus } from 'react-dom'; 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { submitDataAction, type FormState } from '@/lib/actions';
+import { upsertDataAction, type FormState } from '@/lib/actions';
 import { sheetRowSchema, type SheetRowFormData } from '@/lib/validators';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,7 +33,7 @@ interface AdminFormProps {
 }
 
 export function AdminForm({ onSuccessfulSubmit }: AdminFormProps) {
-  const [state, formAction] = useActionState<FormState | null, FormData>(submitDataAction, null);
+  const [state, formAction] = useActionState<FormState | null, FormData>(upsertDataAction, null);
   const { toast } = useToast();
 
   const form = useForm<SheetRowFormData>({

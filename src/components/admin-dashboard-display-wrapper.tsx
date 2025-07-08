@@ -80,5 +80,5 @@ export default async function AdminDashboardDisplayWrapper() {
     );
   }
 
-  return <DashboardTable initialData={tableData} />;
+  return <DashboardTable initialData={tableData} isEditable={true} />;
 }

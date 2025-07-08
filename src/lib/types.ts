@@ -6,4 +6,5 @@ export interface SheetRow {
   Lead: string;
   Priority: 'High' | 'Medium' | 'Low';
   Probability: 'High' | 'Medium' | 'Low';
+  rowIndex: number;
 }

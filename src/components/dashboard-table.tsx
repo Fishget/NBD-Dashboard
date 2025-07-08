@@ -2,6 +2,10 @@
 'use client';
 
 import * as React from 'react';
+import { useActionState, useEffect } from 'react';
+import { useFormStatus } from 'react-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Table,
   TableHeader,
@@ -12,8 +16,9 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { ArrowUpDown, ChevronLeft, ChevronRight, BarChart2, Eye, EyeOff, FilterX } from 'lucide-react';
+import { ArrowUpDown, ChevronLeft, ChevronRight, BarChart2, Eye, EyeOff, FilterX, Pencil, Terminal } from 'lucide-react';
 import type { SheetRow } from '../../lib/types'; 
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -21,10 +26,16 @@ import { OpportunitiesByPriorityChart } from '@/components/charts/opportunities-
 import { OpportunitiesByProbabilityChart } from '@/components/charts/opportunities-by-probability-chart';
 import { PriorityProbabilityMatrix } from '@/components/charts/priority-probability-matrix';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { sheetRowSchema, type SheetRowFormData } from '@/lib/validators';
+import { upsertDataAction, type FormState } from '@/lib/actions';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useToast } from '@/hooks/use-toast';
 
 interface DashboardTableProps {
   initialData: SheetRow[];
+  isEditable?: boolean;
 }
 
 type SortKey = keyof SheetRow | null;
@@ -32,7 +43,169 @@ type SortDirection = 'asc' | 'desc';
 export type ChartFilterType = Record<string, string | number> | null;
 
 
-export function DashboardTable({ initialData }: DashboardTableProps) {
+function EditRowDialog({ row, isOpen, onClose }: { row: SheetRow; isOpen: boolean; onClose: () => void }) {
+  const [state, formAction] = useActionState<FormState | null, FormData>(upsertDataAction, null);
+  const { toast } = useToast();
+
+  const form = useForm<SheetRowFormData>({
+    resolver: zodResolver(sheetRowSchema),
+    defaultValues: {
+      'Donor/Opp': row['Donor/Opp'] || '',
+      'Action/Next Step': row['Action/Next Step'] || '',
+      Lead: row.Lead || '',
+      Priority: row.Priority,
+      Probability: row.Probability,
+      rowIndex: row.rowIndex,
+    },
+  });
+
+  useEffect(() => {
+    if (state) {
+      toast({
+        title: state.success ? 'Success' : 'Error',
+        description: state.message,
+        variant: state.success ? 'default' : 'destructive',
+      });
+      if (state.success) {
+        onClose(); // Close dialog on successful update
+      }
+    }
+  }, [state, onClose, toast]);
+
+  function SubmitButton() {
+    const { pending } = useFormStatus();
+    return (
+      <Button type="submit" disabled={pending}>
+        {pending ? 'Updating...' : 'Update Entry'}
+      </Button>
+    );
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Edit Entry</DialogTitle>
+          <DialogDescription>
+            Make changes to the entry. Click Update to save.
+          </DialogDescription>
+        </DialogHeader>
+         {!state?.success && state?.message && !state.errors && (
+            <Alert variant="destructive">
+                <Terminal className="h-4 w-4" />
+                <AlertTitle>Update Failed</AlertTitle>
+                <AlertDescription>{state.message}</AlertDescription>
+            </Alert>
+        )}
+        <Form {...form}>
+          <form action={formAction} className="space-y-4 py-4">
+            <input type="hidden" {...form.register('rowIndex')} />
+            
+             <FormField
+                control={form.control}
+                name="Donor/Opp"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Donor/Opportunity</FormLabel>
+                    <FormControl>
+                        <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+
+            <FormField
+              control={form.control}
+              name="Action/Next Step"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Action/Next Step</FormLabel>
+                  <FormControl>
+                    <Textarea {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="Lead"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Lead</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-2 gap-4">
+                <FormField
+                    control={form.control}
+                    name="Priority"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Priority</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select Priority" />
+                            </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                            <SelectItem value="High">High</SelectItem>
+                            <SelectItem value="Medium">Medium</SelectItem>
+                            <SelectItem value="Low">Low</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
+
+                <FormField
+                    control={form.control}
+                    name="Probability"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Probability</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select Probability" />
+                            </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                            <SelectItem value="High">High</SelectItem>
+                            <SelectItem value="Medium">Medium</SelectItem>
+                            <SelectItem value="Low">Low</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            </div>
+            
+            <DialogFooter>
+               <DialogClose asChild>
+                  <Button type="button" variant="outline">Cancel</Button>
+               </DialogClose>
+               <SubmitButton />
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+
+export function DashboardTable({ initialData, isEditable = false }: DashboardTableProps) {
   const [data, setData] = React.useState<SheetRow[]>(initialData || []); 
   const [filter, setFilter] = React.useState<string>('');
   const [sortKey, setSortKey] = React.useState<SortKey>(null);
@@ -42,6 +215,8 @@ export function DashboardTable({ initialData }: DashboardTableProps) {
 
   const [showCharts, setShowCharts] = React.useState(false); // Charts hidden by default
   const [chartFilter, setChartFilter] = React.useState<ChartFilterType>(null);
+  const [editingRow, setEditingRow] = React.useState<SheetRow | null>(null);
+
 
   React.useEffect(() => {
     setData(initialData || []); 
@@ -147,13 +322,17 @@ export function DashboardTable({ initialData }: DashboardTableProps) {
   }, [sortedData, rowsPerPage, currentPage]);
 
 
-  const columns: { key: keyof SheetRow; label: string }[] = [
+  const columns: { key: keyof SheetRow | 'actions'; label: string }[] = [
     { key: 'Donor/Opp', label: 'Donor/Opportunity' },
     { key: 'Action/Next Step', label: 'Action/Next Step' },
     { key: 'Lead', label: 'Lead' },
     { key: 'Priority', label: 'Priority' },
     { key: 'Probability', label: 'Probability' },
   ];
+  if (isEditable) {
+    columns.push({ key: 'actions', label: 'Actions' });
+  }
+
 
   const getStatusColorClass = (value: string): string => {
     switch (value?.toLowerCase()) {
@@ -270,14 +449,18 @@ export function DashboardTable({ initialData }: DashboardTableProps) {
             <TableRow>
               {columns.map((col) => (
                  <TableHead key={col.key}>
-                    <Button
-                        variant="ghost"
-                        onClick={() => handleSort(col.key)}
-                        className="px-2 py-1 h-auto text-left -ml-2" // Minimal padding, auto height
-                    >
-                        {col.label}
-                        <ArrowUpDown className={`ml-2 h-3 w-3 ${sortKey === col.key ? 'opacity-100' : 'opacity-30'}`} />
-                    </Button>
+                    {col.key === 'actions' ? (
+                        <span>{col.label}</span>
+                    ) : (
+                        <Button
+                            variant="ghost"
+                            onClick={() => handleSort(col.key as keyof SheetRow)}
+                            className="px-2 py-1 h-auto text-left -ml-2"
+                        >
+                            {col.label}
+                            <ArrowUpDown className={`ml-2 h-3 w-3 ${sortKey === col.key ? 'opacity-100' : 'opacity-30'}`} />
+                        </Button>
+                    )}
                 </TableHead>
               ))}
             </TableRow>
@@ -291,10 +474,17 @@ export function DashboardTable({ initialData }: DashboardTableProps) {
                         key={col.key} 
                         className={cn(
                           col.key === 'Action/Next Step' ? 'min-w-[200px]' : '', // Ensure Action/Next Step has enough width
-                          (col.key === 'Priority' || col.key === 'Probability') && getStatusColorClass(String(row[col.key]))
+                          (col.key === 'Priority' || col.key === 'Probability') && getStatusColorClass(String(row[col.key as keyof SheetRow]))
                         )}
                       >
-                      {String(row[col.key])}
+                      {col.key === 'actions' ? (
+                          <Button variant="ghost" size="icon" onClick={() => setEditingRow(row)}>
+                            <Pencil className="h-4 w-4" />
+                            <span className="sr-only">Edit Row</span>
+                          </Button>
+                      ) : (
+                        String(row[col.key as keyof SheetRow])
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>
@@ -372,7 +562,14 @@ export function DashboardTable({ initialData }: DashboardTableProps) {
            </TableFooter>
         </Table>
       </div>
+
+      {editingRow && (
+        <EditRowDialog
+          row={editingRow}
+          isOpen={!!editingRow}
+          onClose={() => setEditingRow(null)}
+        />
+      )}
     </div>
   );
 }
-

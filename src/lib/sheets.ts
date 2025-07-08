@@ -1,8 +1,10 @@
+
 'use server';
 
 import { google } from 'googleapis';
 import type { sheets_v4 } from 'googleapis';
 import type { SheetRow } from './types'; // Import SheetRow from the new types.ts
+import type { SheetRowFormData } from './validators';
 
 // Environment variables
 const SHEET_ID = process.env.GOOGLE_SHEET_ID;
@@ -165,8 +167,9 @@ export async function getSheetData(): Promise<SheetRow[] | null> {
        console.warn(`[SheetLib:getSheetData] Sheet is missing expected headers: [${missingHeaders.join(', ')}]. Current headers: [${headers.join(', ')}]. Data mapping might be incorrect or incomplete.`);
     }
 
-    const mappedData = dataRows.map((rowArray: any[]) => {
+    const mappedData = dataRows.map((rowArray: any[], index: number) => {
       const rowData: Partial<SheetRow> = {};
+      rowData.rowIndex = index + 2; // Rows are 1-based, plus 1 for the header row.
       headers.forEach((header, index) => {
         const cellValue = rowArray[index] !== undefined && rowArray[index] !== null ? String(rowArray[index]) : '';
         const key = header as keyof SheetRow; 
@@ -247,7 +250,7 @@ export async function getSheetData(): Promise<SheetRow[] | null> {
   }
 }
 
-export async function appendSheetRow(rowData: Omit<SheetRow, ''>): Promise<boolean> {
+export async function appendSheetRow(rowData: Omit<SheetRow, 'rowIndex'>): Promise<boolean> {
   let sheets: sheets_v4.Sheets | null = null;
   try {
       sheets = await getSheetsClient();
@@ -307,3 +310,56 @@ export async function appendSheetRow(rowData: Omit<SheetRow, ''>): Promise<boole
   }
 }
 
+
+export async function updateSheetRow(rowIndex: number, rowData: Omit<SheetRowFormData, 'rowIndex'>): Promise<boolean> {
+  let sheets: sheets_v4.Sheets | null = null;
+  try {
+      sheets = await getSheetsClient();
+  } catch (clientError: any) {
+      console.error('[SheetLib:updateSheetRow] Error obtaining Google Sheets client:', clientError.message);
+      return false;
+  }
+
+  if (!sheets) {
+      console.error("[SheetLib:updateSheetRow] Google Sheets client not available. Cannot update data.");
+      return false;
+  }
+  if (!SHEET_ID) {
+    console.error("[SheetLib:updateSheetRow] ConfigurationError: GOOGLE_SHEET_ID is not configured.");
+    return false;
+  }
+  
+  const sheetName = SHEET_RANGE.split('!')[0] || 'Sheet1';
+  const rangeColumns = SHEET_RANGE.split('!')[1] || 'A:E';
+  const startColumn = rangeColumns.split(':')[0];
+  
+  const updateRange = `${sheetName}!${startColumn}${rowIndex}`;
+  console.log(`[SheetLib:updateSheetRow] Updating range: ${updateRange}`);
+
+  const values = [
+    rowData['Donor/Opp'],
+    rowData['Action/Next Step'],
+    rowData.Lead,
+    rowData.Priority,
+    rowData.Probability
+  ];
+
+  try {
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SHEET_ID,
+      range: updateRange,
+      valueInputOption: 'USER_ENTERED',
+      requestBody: {
+        values: [values],
+      },
+    });
+    console.log(`[SheetLib:updateSheetRow] Row ${rowIndex} updated successfully.`);
+    return true;
+  } catch (error: any) {
+    console.error(`[SheetLib:updateSheetRow] Error updating row ${rowIndex} via Google Sheets API:`, error.message);
+    if (error.response?.data?.error) {
+        console.error('Google API Error:', JSON.stringify(error.response.data.error, null, 2));
+    }
+    return false;
+  }
+}

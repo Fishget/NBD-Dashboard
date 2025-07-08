@@ -1,10 +1,11 @@
+
 'use server';
 
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { checkCredentials, setAuthCookie, clearAuthCookie } from './auth';
 import { loginSchema, sheetRowSchema, sheetConfigSchema } from './validators'; // Added sheetConfigSchema
-import { appendSheetRow, getSheetsClient } from './sheets'; // Added getSheetsClient
+import { appendSheetRow, getSheetsClient, updateSheetRow } from './sheets'; // Added getSheetsClient and updateSheetRow
 import type { SheetRowFormData, SheetConfigFormData } from './validators'; // Added SheetConfigFormData
 
 export type FormState = {
@@ -53,7 +54,7 @@ export async function logoutAction(): Promise<void> {
 }
 
 
-export async function submitDataAction(
+export async function upsertDataAction(
   prevState: FormState | null,
   formData: FormData
 ): Promise<FormState> {
@@ -65,6 +66,7 @@ export async function submitDataAction(
       Lead: formData.get('Lead'),
       Priority: formData.get('Priority'),
       Probability: formData.get('Probability'),
+      rowIndex: formData.get('rowIndex'),
     });
 
     if (!parsed.success) {
@@ -76,23 +78,34 @@ export async function submitDataAction(
       };
     }
 
-    const dataToAppend: SheetRowFormData = parsed.data;
+    const dataToUpsert = parsed.data;
+    const { rowIndex, ...rowData } = dataToUpsert;
 
     if (!process.env.GOOGLE_SHEET_ID || !process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || !process.env.GOOGLE_PRIVATE_KEY) {
         return { message: 'Google Sheet connection is not configured on the server.', success: false };
     }
 
-    const success = await appendSheetRow(dataToAppend);
+    let success = false;
+    let actionVerb = '';
+
+    if (rowIndex) {
+      actionVerb = 'updated';
+      success = await updateSheetRow(rowIndex, rowData);
+    } else {
+      actionVerb = 'submitted';
+      success = await appendSheetRow(rowData);
+    }
+    
 
     if (success) {
-      // Removed revalidatePath('/admin'); It will be handled client-side to prevent potential logout issues.
       revalidatePath('/'); // Revalidate public dashboard
+      revalidatePath('/admin'); // Revalidate admin dashboard preview
       return {
-        message: 'Data submitted successfully!',
+        message: `Data ${actionVerb} successfully!`,
         success: true
       };
     } else {
-      return { message: 'Failed to submit data to Google Sheet. Please check the server console logs for more specific error details from the Google Sheets API.', success: false };
+      return { message: `Failed to ${actionVerb === 'updated' ? 'update' : 'submit'} data to Google Sheet. Please check the server console logs for more specific error details from the Google Sheets API.`, success: false };
     }
   } catch (error) {
     console.error('Submit data error:', error);
